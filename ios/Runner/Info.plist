@@ -45,5 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Permessi per fotocamera e galleria -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to select and save pictures.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app may need microphone access for camera video recording.</string>
+
 </dict>
 </plist>

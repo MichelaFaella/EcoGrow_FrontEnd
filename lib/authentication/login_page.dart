@@ -1,5 +1,5 @@
-import 'package:ecogrow_frontend/authentication/widgets/login_sheet.dart';
-import 'package:ecogrow_frontend/authentication/widgets/register_sheet.dart';
+import 'package:Ecogrow/authentication/widgets/login_sheet.dart';
+import 'package:Ecogrow/authentication/widgets/register_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 

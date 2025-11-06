@@ -1,5 +1,6 @@
-import 'package:ecogrow_frontend/dashboard/pages/profile.dart';
-import 'package:ecogrow_frontend/dashboard/widgets/custom_bottom_bar.dart';
+import 'package:Ecogrow/dashboard/pages/camera.dart';
+import 'package:Ecogrow/dashboard/pages/profile.dart';
+import 'package:Ecogrow/dashboard/widgets/custom_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -79,7 +80,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: const [
                   _PageContent(title: 'Garden Page'),
                   _PageContent(title: 'Notifications Page'),
-                  _PageContent(title: 'Add Plant'),
+                  CameraPage(),
                   _PageContent(title: 'Health Page'),
                   ProfilePage(),
                 ],
@@ -87,24 +88,24 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
 
             // Bottom bar in overlay, ma trasparente verso l’alto
-            // Bottom bar in overlay, ma trasparente verso l’alto
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: IgnorePointer(
-                ignoring: false,
-                // **Aggiungi qui il SizedBox o Container con altezza fissa**
-                child: SizedBox(
-                  // Sostituisci 70.0 con l'altezza effettiva della tua CustomBottomBar
-                  height: 100.0,
-                  child: Container(
-                    child: CustomBottomBar(
-                      selectedIndex: _selectedIndex,
-                      onItemSelected: _onItemTapped,
+            if(_selectedIndex != 2)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: IgnorePointer(
+                  ignoring: false,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: SizedBox(
+                      height: 100.0,
+                      child: CustomBottomBar(
+                        selectedIndex: _selectedIndex,
+                        onItemSelected: _onItemTapped,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+
           ],
         ),
       ),
