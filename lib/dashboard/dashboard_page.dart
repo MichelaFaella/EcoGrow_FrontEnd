@@ -1,4 +1,5 @@
 import 'package:Ecogrow/dashboard/pages/camera.dart';
+import 'package:Ecogrow/dashboard/pages/garden.dart';
 import 'package:Ecogrow/dashboard/pages/profile.dart';
 import 'package:Ecogrow/dashboard/widgets/custom_bottom_bar.dart';
 import 'package:flutter/material.dart';
@@ -78,7 +79,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 controller: _pageController,
                 physics: const BouncingScrollPhysics(),
                 children: const [
-                  _PageContent(title: 'Garden Page'),
+                  GardenPage(),
                   _PageContent(title: 'Notifications Page'),
                   CameraPage(),
                   _PageContent(title: 'Health Page'),
