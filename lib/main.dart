@@ -149,7 +149,7 @@ class EcoGrowApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EcoGrow',
-      home: ProfilePage(), // Mostra direttamente la pagina di login
+      home: LoginPage(), // Mostra direttamente la pagina di login
     );
   }
 }

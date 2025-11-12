@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:Ecogrow/dashboard/dashboard_page.dart';
 import '../../utility/app_colors.dart';
+import '../auth_service.dart';
 
 class RegisterSheet extends StatefulWidget {
   const RegisterSheet({super.key});
@@ -11,7 +11,68 @@ class RegisterSheet extends StatefulWidget {
 }
 
 class _RegisterSheetState extends State<RegisterSheet> {
+  final AuthService _authService = AuthService();
+
+  final TextEditingController _nameCtrl = TextEditingController();
+  final TextEditingController _surnameCtrl = TextEditingController();
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _pwdCtrl = TextEditingController();
+
   bool _obscureText = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _surnameCtrl.dispose();
+    _emailCtrl.dispose();
+    _pwdCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _canSubmit =>
+      !_isLoading &&
+          _nameCtrl.text.trim().isNotEmpty &&
+          _surnameCtrl.text.trim().isNotEmpty &&
+          _emailCtrl.text.trim().isNotEmpty &&
+          _pwdCtrl.text.isNotEmpty;
+
+  Future<void> _handleRegister() async {
+    if (!_canSubmit) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final (ok, msg) = await _authService.register(
+      email: _emailCtrl.text.trim(),
+      password: _pwdCtrl.text,
+      firstName: _nameCtrl.text.trim(),
+      lastName: _surnameCtrl.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (ok) {
+      // chiudi il bottom sheet
+      Navigator.of(context).pop();
+
+      // poi naviga fuori dal sheet
+      Future.microtask(() {
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
+        );
+      });
+    } else {
+      setState(() {
+        _errorMessage = msg ?? 'Registration failed';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,11 +125,15 @@ class _RegisterSheetState extends State<RegisterSheet> {
               ),
               const SizedBox(height: 30),
 
-              // NAME FIELD
-              const SizedBox(
+              // NAME
+              SizedBox(
                 width: 318,
                 child: TextField(
-                  decoration: InputDecoration(
+                  controller: _nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.givenName],
+                  cursorColor: AppColors.light_black,
+                  decoration: const InputDecoration(
                     hintText: "Enter name",
                     hintStyle: TextStyle(color: AppColors.dark_gray, fontSize: 14),
                     contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -80,16 +145,28 @@ class _RegisterSheetState extends State<RegisterSheet> {
                       borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
+                      errorBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.red, width: 1),
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                    focusedErrorBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
 
-              // SURNAME FIELD
-              const SizedBox(
+              // SURNAME
+              SizedBox(
                 width: 318,
                 child: TextField(
-                  decoration: InputDecoration(
+                  controller: _surnameCtrl,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.familyName],
+                  cursorColor: AppColors.light_black,
+                  decoration: const InputDecoration(
                     hintText: "Enter surname",
                     hintStyle: TextStyle(color: AppColors.dark_gray, fontSize: 14),
                     contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -97,8 +174,16 @@ class _RegisterSheetState extends State<RegisterSheet> {
                       borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
+                      errorBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.red, width: 1),
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    focusedErrorBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                   ),
@@ -106,11 +191,16 @@ class _RegisterSheetState extends State<RegisterSheet> {
               ),
               const SizedBox(height: 10),
 
-              // EMAIL FIELD
-              const SizedBox(
+              // EMAIL
+              SizedBox(
                 width: 318,
                 child: TextField(
-                  decoration: InputDecoration(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.email],
+                  cursorColor: AppColors.light_black,
+                  decoration: const InputDecoration(
                     hintText: "Enter email",
                     hintStyle: TextStyle(color: AppColors.dark_gray, fontSize: 14),
                     contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -122,16 +212,30 @@ class _RegisterSheetState extends State<RegisterSheet> {
                       borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
+                      errorBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.red, width: 1),
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                    focusedErrorBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 10),
 
-              // PASSWORD FIELD with eye icon
+              // PASSWORD
               SizedBox(
                 width: 318,
                 child: TextField(
+                  controller: _pwdCtrl,
                   obscureText: _obscureText,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (_canSubmit) _handleRegister();
+                  },
+                  cursorColor: AppColors.light_black,
                   decoration: InputDecoration(
                     hintText: "Enter password",
                     hintStyle: const TextStyle(color: AppColors.dark_gray, fontSize: 14),
@@ -142,6 +246,14 @@ class _RegisterSheetState extends State<RegisterSheet> {
                     ),
                     focusedBorder: const OutlineInputBorder(
                       borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    errorBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    focusedErrorBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                     suffixIcon: IconButton(
@@ -159,7 +271,16 @@ class _RegisterSheetState extends State<RegisterSheet> {
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
+
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
 
               // BUTTON
               SizedBox(
@@ -172,7 +293,7 @@ class _RegisterSheetState extends State<RegisterSheet> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: _canSubmit ? _handleRegister : null,
                   child: Ink(
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -185,7 +306,9 @@ class _RegisterSheetState extends State<RegisterSheet> {
                     child: Container(
                       height: 50,
                       alignment: Alignment.center,
-                      child: const Text(
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
                         "GET STARTED",
                         style: TextStyle(
                           fontFamily: "Poppins",
@@ -199,6 +322,7 @@ class _RegisterSheetState extends State<RegisterSheet> {
                 ),
               ),
               const SizedBox(height: 10),
+
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text(
@@ -211,6 +335,7 @@ class _RegisterSheetState extends State<RegisterSheet> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 30),
             ],
           ),
