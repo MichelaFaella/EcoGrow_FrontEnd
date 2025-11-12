@@ -30,7 +30,7 @@ class _GardenPageState extends State<GardenPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔍 Search bar (fissa)
+
               Center(
                 child: Container(
                   width: 300,
@@ -46,24 +46,31 @@ class _GardenPageState extends State<GardenPage> {
                       ),
                     ],
                   ),
-                  child: const TextField(
-                    cursorWidth: 0,
-                    showCursor: false,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Search your plants...',
-                      hintStyle: TextStyle(
-                        color: AppColors.dark_gray,
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding:
-                      EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                    ),
+                  child: const Row(
+                    children: [
+                      SizedBox(width: 12),
+                      Icon(Icons.search,color: AppColors.dark_gray,),
+
+                      Expanded(child: TextField(
+                        cursorWidth: 0,
+                        showCursor: false,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Search your plants...',
+                          hintStyle: TextStyle(
+                            color: AppColors.dark_gray,
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding:
+                          EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                        ),
+                      ),),
+                    ],
                   ),
                 ),
               ),

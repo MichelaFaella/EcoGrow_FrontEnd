@@ -15,7 +15,12 @@ class PlantCard extends StatelessWidget {
         color: AppColors.light_gray,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+              spreadRadius: 1,
+            )
         ],
       ),
       child: Column(
@@ -64,7 +69,7 @@ class PlantCard extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 14,
-                color: AppColors.dark_gray,
+                color: AppColors.light_black,
               ),
             ),
           ),

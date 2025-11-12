@@ -1,3 +1,4 @@
+import 'package:Ecogrow/dashboard/widgets/logoutDialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../utility/app_colors.dart';
@@ -152,6 +153,27 @@ class ProfilePage extends StatelessWidget {
                   buildSettingsCardProfile(
                     context,
                     items: [
+                      {
+                        'icon': Icons.logout,
+                        'text': 'Log out',
+                        'onTap': () {
+                          debugPrint("Tap: Log out account");
+                          showDialog(
+                            context: context,
+                            useRootNavigator: true,
+                            barrierDismissible: true,
+                            builder: (ctx) => LogOutDialog(
+                              onConfirm: () {
+                                debugPrint("Log out");
+                              },
+                              onCancel: () {
+                                debugPrint("Log out annullata");
+                              },
+                            ),
+                          );
+                        },
+                        'color': AppColors.black,
+                      },
                       {
                         'icon': Icons.delete,
                         'text': 'Delete account',

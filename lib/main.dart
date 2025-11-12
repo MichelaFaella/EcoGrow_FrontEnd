@@ -132,6 +132,7 @@ class SplashScreen extends StatelessWidget {
   }
 }*/
 
+import 'package:Ecogrow/dashboard/pages/profile.dart';
 import 'package:flutter/material.dart';
 import 'authentication/login_page.dart';
 import 'dashboard/dashboard_page.dart';
@@ -148,7 +149,7 @@ class EcoGrowApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EcoGrow',
-      home: DashboardPage(), // Mostra direttamente la pagina di login
+      home: ProfilePage(), // Mostra direttamente la pagina di login
     );
   }
 }

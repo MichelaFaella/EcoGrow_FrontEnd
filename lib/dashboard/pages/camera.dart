@@ -193,12 +193,21 @@ class _CameraPageState extends State<CameraPage> {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
+                        color: Colors.white, // Sfondo semi-trasparente
                         border: Border.all(color: AppColors.white, width: 5),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.camera_alt,
+                          size: 44,
+                          color: AppColors.green, // Icona trasparente
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
+
 
               // Miniatura foto (se presente)
               if (_capturedImage != null)

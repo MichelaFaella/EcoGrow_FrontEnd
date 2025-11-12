@@ -5,7 +5,7 @@ import '../utility/storage_service.dart';
 
 class AuthService {
 
-  final String baseUrl = "http://127.0.0.1:5000";
+  final String baseUrl = "http://127.0.0.1:8000";
 
   /// Do the login and save the backend token
   Future<bool> login(String email, String password) async{
