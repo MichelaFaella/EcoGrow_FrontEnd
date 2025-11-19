@@ -3,7 +3,7 @@ import 'package:Ecogrow/dashboard/dashboard_page.dart';
 import 'package:flutter/material.dart';
 import '../../utility/app_colors.dart';
 import '../../utility/toast.dart';
-import '../auth_service.dart';
+import '../service/auth_service.dart';
 
 class LoginSheet extends StatefulWidget {
   const LoginSheet({super.key});
@@ -52,11 +52,8 @@ class _LoginSheetState extends State<LoginSheet> {
     // 1) valida
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid) {
-      Toast.show(
-        context,
-        message: "Please fix the highlighted fields",
-        type: ToastType.info,
-      );
+      // campi non validi → toast giallo info
+      showToastInfo(context, "Please fix the highlighted fields");
       return;
     }
 
@@ -74,13 +71,8 @@ class _LoginSheetState extends State<LoginSheet> {
     if (!mounted) return;
 
     if (ok) {
-      // 3) toast successo + chiudi sheet + naviga
-      Toast.show(
-        context,
-        message: "Welcome back!",
-        type: ToastType.success,
-        duration: const Duration(seconds: 2),
-      );
+      // login ok → toast verde
+      showToastCorrect(context, "Welcome back!");
 
       Navigator.of(context).pop();
       Future.microtask(() {
@@ -94,12 +86,9 @@ class _LoginSheetState extends State<LoginSheet> {
         _errorMessage = msg ?? "Incorrect username or password";
         _isLoading = false;
       });
-      Toast.show(
-        context,
-        message: _errorMessage!,
-        type: ToastType.error,
-        duration: const Duration(seconds: 3),
-      );
+
+      // login fallito → toast rosso
+      showToastWrong(context, _errorMessage!);
     }
   }
 

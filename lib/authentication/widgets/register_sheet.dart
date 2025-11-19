@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:Ecogrow/dashboard/dashboard_page.dart';
+import 'package:flutter/material.dart';
 import '../../utility/app_colors.dart';
-import '../auth_service.dart';
+import '../service/auth_service.dart';
+import '../../utility/toast.dart'; // <-- importa i toast
 
 class RegisterSheet extends StatefulWidget {
   const RegisterSheet({super.key});
@@ -20,7 +21,6 @@ class _RegisterSheetState extends State<RegisterSheet> {
 
   bool _obscureText = true;
   bool _isLoading = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -39,11 +39,13 @@ class _RegisterSheetState extends State<RegisterSheet> {
           _pwdCtrl.text.isNotEmpty;
 
   Future<void> _handleRegister() async {
-    if (!_canSubmit) return;
+    if (!_canSubmit) {
+      showToastInfo(context, 'Please fill in all fields');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     final (ok, msg) = await _authService.register(
@@ -56,6 +58,9 @@ class _RegisterSheetState extends State<RegisterSheet> {
     if (!mounted) return;
 
     if (ok) {
+      // toast successo
+      showToastCorrect(context, 'Welcome to EcoGrow!');
+
       // chiudi il bottom sheet
       Navigator.of(context).pop();
 
@@ -67,8 +72,10 @@ class _RegisterSheetState extends State<RegisterSheet> {
         );
       });
     } else {
+      // toast errore, ma niente testo rosso nel widget
+      showToastWrong(context, msg ?? 'Registration failed');
+
       setState(() {
-        _errorMessage = msg ?? 'Registration failed';
         _isLoading = false;
       });
     }
@@ -136,20 +143,23 @@ class _RegisterSheetState extends State<RegisterSheet> {
                   decoration: const InputDecoration(
                     hintText: "Enter name",
                     hintStyle: TextStyle(color: AppColors.dark_gray, fontSize: 14),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    contentPadding:
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
-                      errorBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.red, width: 1),
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                    focusedErrorBorder: const OutlineInputBorder(
+                    errorBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: AppColors.red, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
@@ -169,20 +179,23 @@ class _RegisterSheetState extends State<RegisterSheet> {
                   decoration: const InputDecoration(
                     hintText: "Enter surname",
                     hintStyle: TextStyle(color: AppColors.dark_gray, fontSize: 14),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    contentPadding:
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
-                      errorBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.red, width: 1),
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
+                    errorBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
-                    focusedErrorBorder: const OutlineInputBorder(
+                    focusedErrorBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: AppColors.red, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
@@ -203,20 +216,23 @@ class _RegisterSheetState extends State<RegisterSheet> {
                   decoration: const InputDecoration(
                     hintText: "Enter email",
                     hintStyle: TextStyle(color: AppColors.dark_gray, fontSize: 14),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    contentPadding:
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
-                      errorBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.red, width: 1),
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                    focusedErrorBorder: const OutlineInputBorder(
+                    errorBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.red, width: 1),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: AppColors.red, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
@@ -238,14 +254,18 @@ class _RegisterSheetState extends State<RegisterSheet> {
                   cursorColor: AppColors.light_black,
                   decoration: InputDecoration(
                     hintText: "Enter password",
-                    hintStyle: const TextStyle(color: AppColors.dark_gray, fontSize: 14),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    hintStyle: const TextStyle(
+                        color: AppColors.dark_gray, fontSize: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     enabledBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                     focusedBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.dark_gray, width: 1),
+                      borderSide:
+                      BorderSide(color: AppColors.dark_gray, width: 1),
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                     errorBorder: const OutlineInputBorder(
@@ -272,15 +292,6 @@ class _RegisterSheetState extends State<RegisterSheet> {
               ),
 
               const SizedBox(height: 20),
-
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
 
               // BUTTON
               SizedBox(

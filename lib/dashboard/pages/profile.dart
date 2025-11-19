@@ -1,8 +1,11 @@
 import 'package:Ecogrow/dashboard/widgets/logoutDialog.dart';
 import 'package:flutter/material.dart';
 
+import '../../authentication/service/auth_service.dart';
+import '../../authentication/login_page.dart';
 import '../../utility/app_colors.dart';
 import '../../utility/widget_utility.dart';
+import '../../utility/storage_service.dart'; // <-- IMPORT AGGIUNTO
 import '../widgets/deleteDialog.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -75,14 +78,35 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        "Michela Faella",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: "Poppins",
-                          color: Colors.white,
-                        ),
+                      // NOME + COGNOME da StorageService
+                      FutureBuilder<List<String?>>(
+                        future: Future.wait([
+                          StorageService.getFirstName(),
+                          StorageService.getLastName(),
+                        ]),
+                        builder: (context, snapshot) {
+                          String displayName = "EcoGrow User";
+
+                          if (snapshot.connectionState == ConnectionState.done &&
+                              snapshot.hasData) {
+                            final first = snapshot.data![0] ?? '';
+                            final last = snapshot.data![1] ?? '';
+                            final combined = '$first $last'.trim();
+                            if (combined.isNotEmpty) {
+                              displayName = combined;
+                            }
+                          }
+
+                          return Text(
+                            displayName,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: "Poppins",
+                              color: Colors.white,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -149,7 +173,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // --- Card 3 — Eliminazione account ---
+                  // --- Card 3 — Eliminazione account / logout ---
                   buildSettingsCardProfile(
                     context,
                     items: [
@@ -163,11 +187,27 @@ class ProfilePage extends StatelessWidget {
                             useRootNavigator: true,
                             barrierDismissible: true,
                             builder: (ctx) => LogOutDialog(
-                              onConfirm: () {
+                              onConfirm: () async {
                                 debugPrint("Log out");
+
+                                // chiudo il dialog
+                                Navigator.of(ctx).pop();
+
+                                // cancello token + user info
+                                final auth = AuthService();
+                                await auth.logout();
+
+                                // porto l'utente alla LoginPage
+                                Navigator.of(context, rootNavigator: true)
+                                    .pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                      builder: (_) => const LoginPage()),
+                                      (route) => false,
+                                );
                               },
                               onCancel: () {
                                 debugPrint("Log out annullata");
+                                Navigator.of(ctx).pop();
                               },
                             ),
                           );
@@ -183,14 +223,32 @@ class ProfilePage extends StatelessWidget {
                             context: context,
                             useRootNavigator: true,
                             barrierDismissible: true,
-                            builder: (ctx) => DeleteAccountDialog(
-                              onConfirm: () {
-                                debugPrint("Account eliminato");
-                              },
-                              onCancel: () {
-                                debugPrint("Cancellazione annullata");
-                              },
-                            ),
+                            builder: (ctx) {
+                              final navigator = Navigator.of(ctx, rootNavigator: true);
+
+                              return DeleteAccountDialog(
+                                onConfirm: () async {
+                                  debugPrint("Account eliminato");
+
+                                  // chiudo il dialog
+                                  navigator.pop();
+
+                                  // cancello utente via API + storage
+                                  final auth = AuthService();
+                                  await auth.removeUser();
+
+                                  // porto l'utente alla LoginPage
+                                  navigator.pushAndRemoveUntil(
+                                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                                        (route) => false,
+                                  );
+                                },
+                                onCancel: () {
+                                  debugPrint("Cancellazione annullata");
+                                  navigator.pop();
+                                },
+                              );
+                            },
                           );
                         },
                         'color': AppColors.black,

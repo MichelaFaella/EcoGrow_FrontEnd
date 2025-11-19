@@ -1,7 +1,10 @@
-/*import 'package:flutter/material.dart';
-import 'authentication/auth_service.dart';
+import 'package:flutter/material.dart';
+
 import 'authentication/login_page.dart';
+import 'authentication/splash_screen.dart';
 import 'dashboard/dashboard_page.dart';
+import 'utility/app_colors.dart';
+import 'utility/storage_service.dart'; // <-- aggiungi questo import con il path giusto
 
 void main() {
   runApp(const EcoGrowApp());
@@ -36,7 +39,6 @@ class RootPage extends StatefulWidget {
 class _RootPageState extends State<RootPage> {
   bool _loading = true;
   bool _authenticated = false;
-  bool _error = false;
 
   @override
   void initState() {
@@ -45,20 +47,14 @@ class _RootPageState extends State<RootPage> {
   }
 
   Future<void> _checkAuth() async {
-    try {
-      final auth = await AuthService().isAuthenticated();
-      if (!mounted) return;
-      setState(() {
-        _authenticated = auth;
-        _loading = false;
-      });
-    } catch (e) {
-      // In caso di errore (es. backend non raggiungibile)
-      setState(() {
-        _error = true;
-        _loading = false;
-      });
-    }
+    final token = await StorageService.getToken();
+
+    if (!mounted) return;
+
+    setState(() {
+      _authenticated = token != null && token.isNotEmpty;
+      _loading = false;
+    });
   }
 
   @override
@@ -67,91 +63,8 @@ class _RootPageState extends State<RootPage> {
       return const SplashScreen();
     }
 
-    if (_error) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 60),
-              const SizedBox(height: 16),
-              const Text(
-                'Unable to connect to server',
-                style: TextStyle(fontSize: 18, color: Colors.black87),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _checkAuth,
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    //return _authenticated ? const DashboardPage() : const LoginPage();
-    return const LoginPage();
+    // se c'è il token vado in dashboard, altrimenti login
+    return _authenticated ? const DashboardPage() : LoginPage();
   }
 }
-
-/// Simple splash screen (adattabile a qualsiasi dispositivo)
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.local_florist,
-              color: Colors.green,
-              size: screenWidth * 0.25, // Adattabile
-            ),
-            SizedBox(height: screenWidth * 0.05),
-            Text(
-              'EcoGrow',
-              style: TextStyle(
-                color: Colors.green[700],
-                fontSize: screenWidth * 0.08,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: screenWidth * 0.1),
-            const CircularProgressIndicator(color: Colors.green),
-          ],
-        ),
-      ),
-    );
-  }
-}*/
-
-import 'package:Ecogrow/dashboard/pages/profile.dart';
-import 'package:flutter/material.dart';
-import 'authentication/login_page.dart';
-import 'dashboard/dashboard_page.dart';
-
-void main() {
-  runApp(const EcoGrowApp());
-}
-
-class EcoGrowApp extends StatelessWidget {
-  const EcoGrowApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'EcoGrow',
-      home: LoginPage(), // Mostra direttamente la pagina di login
-    );
-  }
-}
-
 

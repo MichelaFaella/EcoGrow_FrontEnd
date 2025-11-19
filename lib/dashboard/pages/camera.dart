@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'package:Ecogrow/dashboard/pages/service/plant_service.dart';
 import 'package:Ecogrow/utility/app_colors.dart';
+
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
+
+import 'garden.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -24,15 +28,17 @@ class _CameraPageState extends State<CameraPage> {
     _initCamera();
   }
 
-  /// Inizializza la fotocamera (solo per scattare foto)
+  // -----------------------------------------------------
+  // INIT CAMERA
+  // -----------------------------------------------------
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
-      final firstCamera = cameras.first;
+      final camera = cameras.first;
 
       _controller = CameraController(
-        firstCamera,
-        ResolutionPreset.max,
+        camera,
+        ResolutionPreset.high,
         enableAudio: false,
       );
 
@@ -41,119 +47,183 @@ class _CameraPageState extends State<CameraPage> {
 
       if (mounted) setState(() {});
     } catch (e) {
-      debugPrint('Errore inizializzazione fotocamera: $e');
+      debugPrint("[CameraPage] ERROR init camera: $e");
     }
   }
 
-  /// Scatta una foto e la salva localmente
+  // -----------------------------------------------------
+  // TAKE PICTURE
+  // -----------------------------------------------------
   Future<void> _takePicture() async {
     try {
       if (_controller == null || !_controller!.value.isInitialized) return;
 
       await _initializeControllerFuture;
-      final image = await _controller!.takePicture();
+      final raw = await _controller!.takePicture();
 
-      final directory = await getApplicationDocumentsDirectory();
-      final imagePath =
-          '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
-      final savedImage = await File(image.path).copy(imagePath);
+      final dir = await getTemporaryDirectory();
+      final jpgPath =
+          "${dir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg";
 
-      setState(() {
-        _capturedImage = XFile(savedImage.path);
-      });
+      final saved = await File(raw.path).copy(jpgPath);
+
+      setState(() => _capturedImage = XFile(saved.path));
+
+      await _controller?.dispose();
+      _controller = null;
+
+      debugPrint("[CameraPage] Foto salvata: $jpgPath");
+
     } catch (e) {
-      debugPrint('Errore durante lo scatto: $e');
+      debugPrint("[CameraPage] ERROR takePicture: $e");
     }
   }
 
-  /// Invia l'immagine all'API (esempio POST multipart)
+  // -----------------------------------------------------
+  // SEND TO API + COMPRESS
+  // -----------------------------------------------------
   Future<void> _sendToApi() async {
     if (_capturedImage == null) return;
 
     setState(() => _isUploading = true);
 
     try {
-      final uri = Uri.parse("https://tuo-endpoint-api.com/upload"); // <--- cambia con il tuo URL
+      final original = File(_capturedImage!.path);
+      debugPrint("[CameraPage] Original size: ${await original.length()} bytes");
 
-      var request = http.MultipartRequest('POST', uri);
-      request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        _capturedImage!.path,
-      ));
-
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Image uploaded successfully!")),
-        );
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Upload failed: ${response.statusCode}")),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error uploading: $e")),
+      final compressedBytes = await FlutterImageCompress.compressWithFile(
+        original.path,
+        quality: 40,
+        format: CompressFormat.jpeg,
+        minWidth: 1080,
+        minHeight: 1080,
       );
+
+      if (compressedBytes == null) {
+        throw Exception("Compression failed");
+      }
+
+      final compressedPath =
+      original.path.replaceAll(".jpg", "_cmp.jpg");
+      final compressedFile = File(compressedPath);
+      await compressedFile.writeAsBytes(compressedBytes);
+
+      debugPrint("[CameraPage] Compressed size: ${compressedBytes.length} bytes");
+
+      final plantService = PlantService();
+      final result =
+      await plantService.createPlant(imageFile: compressedFile);
+
+      final ok = result.$1;
+      final message = result.$2;
+      final data = result.$3;
+
+      if (!ok) {
+        _showErrorToast(message ?? "Upload error");
+        return;
+      }
+
+      debugPrint("[CameraPage] Plant created → ID: ${data?["id"]}");
+
+      // SUCCESS TOAST
+      showToastCorrect(context, "Plant created successfully!");
+
+      // Delay per far vedere il toast
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const GardenPage()),
+      );
+
+    } catch (e) {
+      debugPrint("[CameraPage] ERROR sendToApi: $e");
+      _showErrorToast("Errore upload: $e");
+
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
   }
 
+  // -----------------------------------------------------
+  // SMALL ERROR TOAST
+  // -----------------------------------------------------
+  void _showErrorToast(String msg) {
+    final overlay = Overlay.of(context);
+    if (overlay == null) return;
+
+    final entry = OverlayEntry(
+      builder: (_) => Positioned(
+        bottom: 50,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.redAccent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              msg,
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: "Poppins",
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(entry);
+    Future.delayed(const Duration(seconds: 3), () => entry.remove());
+  }
+
+  // -----------------------------------------------------
   @override
   void dispose() {
     _controller?.dispose();
     super.dispose();
   }
 
+  // -----------------------------------------------------
+  // UI BUILD
+  // -----------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: _capturedImage == null ? _buildCameraView() : _buildPreviewView(),
+      body: _capturedImage == null
+          ? _buildCameraView()
+          : _buildPreviewView(),
     );
   }
 
-  /// Vista fotocamera (prima dello scatto)
+  // -----------------------------------------------------
+  // CAMERA VIEW
+  // -----------------------------------------------------
   Widget _buildCameraView() {
-    return FutureBuilder<void>(
+    return FutureBuilder(
       future: _initializeControllerFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            _controller != null) {
           return Stack(
             children: [
-              // Anteprima fotocamera centrata e scalata per riempire lo schermo
-              Positioned.fill(
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _controller!.value.previewSize!.height,
-                    height: _controller!.value.previewSize!.width,
-                    child: CameraPreview(_controller!),
-                  ),
-                ),
-              ),
+              Positioned.fill(child: CameraPreview(_controller!)),
 
-
-              // Rettangolo guida
               Center(
                 child: Container(
                   width: 350,
                   height: 650,
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppColors.green,
-                      width: 3,
-                    ),
+                    border: Border.all(color: AppColors.green, width: 3),
                     borderRadius: BorderRadius.circular(20),
-                    color: Colors.transparent,
                   ),
                 ),
               ),
 
-              // Messaggio sopra il rettangolo
               SafeArea(
                 child: Align(
                   alignment: Alignment.topCenter,
@@ -168,7 +238,7 @@ class _CameraPageState extends State<CameraPage> {
                         borderRadius: BorderRadius.circular(50),
                       ),
                       child: const Text(
-                        "Take a photo of the plant on a background as uniform as possible",
+                        "Take a photo of the plant on a uniform background",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.black,
@@ -181,7 +251,6 @@ class _CameraPageState extends State<CameraPage> {
                 ),
               ),
 
-              // Pulsante di scatto centrato in basso
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
@@ -191,74 +260,43 @@ class _CameraPageState extends State<CameraPage> {
                     child: Container(
                       width: 80,
                       height: 80,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white, // Sfondo semi-trasparente
-                        border: Border.all(color: AppColors.white, width: 5),
+                        color: Colors.white,
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.camera_alt,
-                          size: 44,
-                          color: AppColors.green, // Icona trasparente
-                        ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 44,
+                        color: AppColors.green,
                       ),
                     ),
                   ),
                 ),
               ),
-
-
-              // Miniatura foto (se presente)
-              if (_capturedImage != null)
-                Positioned(
-                  bottom: 30,
-                  left: 30,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(_capturedImage!.path),
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
             ],
           );
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'Errore nella fotocamera:\n${snapshot.error}',
-              style: const TextStyle(color: Colors.redAccent),
-              textAlign: TextAlign.center,
-            ),
-          );
-        } else {
-          return const Center(child: CircularProgressIndicator());
         }
+
+        return const Center(child: CircularProgressIndicator());
       },
     );
   }
 
-  /// Vista di anteprima dopo lo scatto
+  // -----------------------------------------------------
+  // PREVIEW VIEW
+  // -----------------------------------------------------
   Widget _buildPreviewView() {
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.file(
-            File(_capturedImage!.path),
-            fit: BoxFit.cover,
-          ),
+          child: Image.file(File(_capturedImage!.path), fit: BoxFit.cover),
         ),
 
-        // Loader durante upload
         if (_isUploading)
           const Center(
             child: CircularProgressIndicator(color: AppColors.green),
           ),
 
-        // Pulsanti di conferma e rifai
         if (!_isUploading)
           Align(
             alignment: Alignment.bottomCenter,
@@ -267,7 +305,7 @@ class _CameraPageState extends State<CameraPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Pulsante Retake
+                  // RETAKE
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.orange,
@@ -275,26 +313,21 @@ class _CameraPageState extends State<CameraPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _capturedImage = null;
-                      });
+                    onPressed: () async {
+                      setState(() => _capturedImage = null);
+                      await _initCamera();
                     },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 12),
-                      child: Text(
-                        "Retake",
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontFamily: "Poppins",
-                          fontWeight: FontWeight.bold,
-                        ),
+                    child: const Text(
+                      "Retake",
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontFamily: "Poppins",
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
 
-                  // Pulsante Confirm
+                  // CONFIRM
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.green,
@@ -303,16 +336,12 @@ class _CameraPageState extends State<CameraPage> {
                       ),
                     ),
                     onPressed: _sendToApi,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 12),
-                      child: Text(
-                        "Confirm",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: "Poppins",
-                          fontWeight: FontWeight.bold,
-                        ),
+                    child: const Text(
+                      "Confirm",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: "Poppins",
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -320,8 +349,83 @@ class _CameraPageState extends State<CameraPage> {
               ),
             ),
           ),
-
       ],
     );
   }
+}
+
+// ------------------------------------------------------------
+// SUCCESS TOAST (già pronto, uguale al tuo originale)
+// ------------------------------------------------------------
+void showToastCorrect(BuildContext context, String message) {
+  final overlay = Overlay.of(context);
+  if (overlay == null) return;
+
+  final overlayEntry = OverlayEntry(
+    builder: (context) => Positioned(
+      top: 40,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          width: 250,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: AppColors.green,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.done,
+                  size: 25,
+                  color: AppColors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: AppColors.black,
+                    fontSize: 14,
+                    fontFamily: 'Poppins',
+                    decoration: TextDecoration.none,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  overlay.insert(overlayEntry);
+  Future.delayed(const Duration(seconds: 5), () {
+    overlayEntry.remove();
+  });
 }
