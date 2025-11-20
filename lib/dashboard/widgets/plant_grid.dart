@@ -49,7 +49,7 @@ class _PlantGridState extends State<PlantGrid> {
             crossAxisCount: 2,
             crossAxisSpacing: 18,
             mainAxisSpacing: 18,
-            childAspectRatio: 0.55,
+            childAspectRatio: 0.6,
           ),
           itemBuilder: (context, index) {
             return PlantCard(plant: plants[index]);
