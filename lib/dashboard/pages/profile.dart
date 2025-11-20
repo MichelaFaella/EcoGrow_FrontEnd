@@ -1,3 +1,4 @@
+import 'package:Ecogrow/dashboard/pages/personal_info.dart';
 import 'package:Ecogrow/dashboard/widgets/logoutDialog.dart';
 import 'package:flutter/material.dart';
 
@@ -5,7 +6,7 @@ import '../../authentication/service/auth_service.dart';
 import '../../authentication/login_page.dart';
 import '../../utility/app_colors.dart';
 import '../../utility/widget_utility.dart';
-import '../../utility/storage_service.dart'; // <-- IMPORT AGGIUNTO
+import '../../utility/storage_service.dart';
 import '../widgets/deleteDialog.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -27,7 +28,6 @@ class ProfilePage extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Sfondo immagine
                   Image.asset(
                     "images/profile.jpg",
                     width: screenWidth,
@@ -35,7 +35,6 @@ class ProfilePage extends StatelessWidget {
                     fit: BoxFit.cover,
                   ),
 
-                  // Layer gradiente (non blocca i tocchi)
                   Container(
                     width: screenWidth,
                     height: 250,
@@ -52,7 +51,6 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
 
-                  // Cerchio con immagine profilo + nome
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -78,7 +76,7 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      // NOME + COGNOME da StorageService
+
                       FutureBuilder<List<String?>>(
                         future: Future.wait([
                           StorageService.getFirstName(),
@@ -114,8 +112,9 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
 
-            // --- SEZIONE CARD ---
             const SizedBox(height: 30),
+
+            // --- SEZIONE CARD ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
@@ -130,15 +129,16 @@ class ProfilePage extends StatelessWidget {
                         'icon': Icons.edit,
                         'text': 'Personal informations',
                         'onTap': () {
-                          debugPrint("Tap: Personal informations");
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => PersonalPage()),
+                          );
                         },
                       },
                       {
                         'icon': Icons.group,
                         'text': 'Friends',
-                        'onTap': () {
-                          debugPrint("Tap: Friends");
-                        },
+                        'onTap': () => debugPrint("Tap: Friends"),
                       },
                     ],
                   ),
@@ -151,101 +151,84 @@ class ProfilePage extends StatelessWidget {
                       {
                         'icon': Icons.eco,
                         'text': 'Shared plants',
-                        'onTap': () {
-                          debugPrint("Tap: Shared plants");
-                        },
+                        'onTap': () => debugPrint("Tap: Shared plants"),
                       },
                       {
                         'icon': Icons.calendar_month,
                         'text': 'Calendar view',
-                        'onTap': () {
-                          debugPrint("Tap: Calendar view");
-                        },
+                        'onTap': () => debugPrint("Tap: Calendar view"),
                       },
                       {
                         'icon': Icons.share,
                         'text': 'Share your garden',
-                        'onTap': () {
-                          debugPrint("Tap: Share your garden");
-                        },
+                        'onTap': () => debugPrint("Tap: Share your garden"),
                       },
                     ],
                   ),
                   const SizedBox(height: 20),
 
-                  // --- Card 3 — Eliminazione account / logout ---
+                  // --- Card 3 — Logout / Delete account ---
                   buildSettingsCardProfile(
                     context,
                     items: [
+                      // ----------------------- LOGOUT -----------------------
                       {
                         'icon': Icons.logout,
                         'text': 'Log out',
                         'onTap': () {
-                          debugPrint("Tap: Log out account");
                           showDialog(
                             context: context,
-                            useRootNavigator: true,
                             barrierDismissible: true,
-                            builder: (ctx) => LogOutDialog(
-                              onConfirm: () async {
-                                debugPrint("Log out");
-
-                                // chiudo il dialog
-                                Navigator.of(ctx).pop();
-
-                                // cancello token + user info
-                                final auth = AuthService();
-                                await auth.logout();
-
-                                // porto l'utente alla LoginPage
-                                Navigator.of(context, rootNavigator: true)
-                                    .pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                      builder: (_) => const LoginPage()),
-                                      (route) => false,
-                                );
-                              },
-                              onCancel: () {
-                                debugPrint("Log out annullata");
-                                Navigator.of(ctx).pop();
-                              },
-                            ),
-                          );
-                        },
-                        'color': AppColors.black,
-                      },
-                      {
-                        'icon': Icons.delete,
-                        'text': 'Delete account',
-                        'onTap': () {
-                          debugPrint("Tap: Delete account");
-                          showDialog(
-                            context: context,
-                            useRootNavigator: true,
-                            barrierDismissible: true,
-                            builder: (ctx) {
-                              final navigator = Navigator.of(ctx, rootNavigator: true);
-
-                              return DeleteAccountDialog(
+                            builder: (dialogCtx) {
+                              return LogOutDialog(
                                 onConfirm: () async {
-                                  debugPrint("Account eliminato");
+                                  Navigator.of(dialogCtx).pop(); // chiudi dialog
 
-                                  // chiudo il dialog
-                                  navigator.pop();
-
-                                  // cancello utente via API + storage
                                   final auth = AuthService();
-                                  await auth.removeUser();
+                                  await auth.logout();
 
-                                  // porto l'utente alla LoginPage
-                                  navigator.pushAndRemoveUntil(
-                                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                                  Navigator.of(context, rootNavigator: true)
+                                      .pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                        builder: (_) => const LoginPage()),
                                         (route) => false,
                                   );
                                 },
                                 onCancel: () {
-                                  debugPrint("Cancellazione annullata");
-                                  navigator.pop();
+                                  Navigator.of(dialogCtx).pop();
+                                },
+                              );
+                            },
+                          );
+                        },
+                        'color': AppColors.black,
+                      },
+
+                      // ------------------ DELETE ACCOUNT -------------------
+                      {
+                        'icon': Icons.delete,
+                        'text': 'Delete account',
+                        'onTap': () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: true,
+                            builder: (dialogCtx) {
+                              return DeleteAccountDialog(
+                                onConfirm: () async {
+                                  Navigator.of(dialogCtx).pop(); // chiudi dialog
+
+                                  final auth = AuthService();
+                                  await auth.removeUser();
+
+                                  Navigator.of(context, rootNavigator: true)
+                                      .pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                        builder: (_) => const LoginPage()),
+                                        (route) => false,
+                                  );
+                                },
+                                onCancel: () {
+                                  Navigator.of(dialogCtx).pop();
                                 },
                               );
                             },

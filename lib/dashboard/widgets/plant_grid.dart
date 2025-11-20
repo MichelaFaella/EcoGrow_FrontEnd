@@ -1,81 +1,60 @@
 import 'package:flutter/material.dart';
 import '../pages/models/plant.dart';
+import '../pages/service/plant_service.dart';
 import 'plant_card.dart';
 
-class PlantGrid extends StatelessWidget {
+class PlantGrid extends StatefulWidget {
   final String filter;
   const PlantGrid({Key? key, required this.filter}) : super(key: key);
 
   @override
+  State<PlantGrid> createState() => _PlantGridState();
+}
+
+class _PlantGridState extends State<PlantGrid> {
+  final PlantService plantService = PlantService();
+
+  @override
   Widget build(BuildContext context) {
-    final List<Plant> allPlants = [
-      Plant(
-        name: 'Adiantum hispidulum',
-        commonName: 'Bronze Venus',
-        imagePath: 'images/a.jpg',
-        size: 'small',
-        difficulty: 'medium',
-      ),
-      Plant(
-        name: 'Aglaonema',
-        commonName: 'Maria',
-        imagePath: 'images/images.jpeg',
-        size: 'medium',
-        difficulty: 'easy',
-      ),
-      Plant(
-        name: 'Adiantum raddianum',
-        commonName: 'Fragrans',
-        imagePath: 'images/adiantum_fragrans_v1.jpg',
-        size: 'small',
-        difficulty: 'hard',
-      ),
-      Plant(
-        name: 'Pothos',
-        commonName: 'Aureus',
-        imagePath: 'images/adiantum_fragrans_v1.jpg',
-        size: 'large',
-        difficulty: 'easy',
-      ),
-      Plant(
-        name: 'Monstera deliciosa',
-        commonName: 'Swiss Cheese Plant',
-        imagePath: 'images/Monstera_deliciosa2.jpg',
-        size: 'large',
-        difficulty: 'medium',
-      ),
-      Plant(
-        name: 'Sansevieria trifasciata',
-        commonName: 'Snake Plant',
-        imagePath: 'images/adiantum_fragrans_v1.jpg',
-        size: 'medium',
-        difficulty: 'easy',
-      ),
-    ];
+    return FutureBuilder(
+      future: plantService.getAllUserPlants(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
+        final (ok, msg, data) = snapshot.data!;
 
-    List<Plant> filteredPlants = List.from(allPlants); // 👈 copia, non modifica l’originale
+        if (!ok) {
+          return Center(child: Text(msg ?? "Error"));
+        }
 
-    if (filter == 'SIZE') {
-      filteredPlants.sort((a, b) => a.size.compareTo(b.size));
-    } else if (filter == 'DIFFICULTY') {
-      filteredPlants.sort((a, b) => a.difficulty.compareTo(b.difficulty));
-    } else if (filter == 'ALL') {
-      filteredPlants = List.from(allPlants); // ✅ ripristina lista originale
-    }
+        // Convert JSON to List<Plant>
+        List<Plant> plants = data!
+            .map((x) => Plant.fromJson(x as Map<String, dynamic>))
+            .toList();
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: filteredPlants.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 18,
-        mainAxisSpacing: 18,
-        childAspectRatio: 0.55,
-      ),
-      itemBuilder: (context, index) {
-        return PlantCard(plant: filteredPlants[index]);
+        // 🔥 FILTERING
+        if (widget.filter == 'SIZE') {
+          plants.sort((a, b) => a.size.compareTo(b.size));
+        } else if (widget.filter == 'DIFFICULTY') {
+          plants.sort((a, b) => a.difficulty.compareTo(b.difficulty));
+        }
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: plants.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 18,
+            mainAxisSpacing: 18,
+            childAspectRatio: 0.55,
+          ),
+          itemBuilder: (context, index) {
+            return PlantCard(plant: plants[index]);
+          },
+        );
       },
     );
   }

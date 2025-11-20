@@ -7,7 +7,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'garden.dart';
+import '../dashboard_page.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -133,7 +133,7 @@ class _CameraPageState extends State<CameraPage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const GardenPage()),
+        MaterialPageRoute(builder: (_) => const DashboardPage()),
       );
 
     } catch (e) {

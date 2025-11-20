@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../utility/app_colors.dart';
 
 class DeleteAccountDialog extends StatelessWidget {
@@ -44,27 +43,28 @@ class DeleteAccountDialog extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             minimumSize: const Size(100, 45),
           ),
-          onPressed: () {
-            Navigator.of(context).pop();
-            onConfirm();
-          },
-          child: const Text("YES", style: TextStyle(fontFamily: "Poppins", color: AppColors.white)),
+          // ✅ Nessun Navigator.pop() qui
+          onPressed: onConfirm,
+          child: const Text(
+            "YES",
+            style: TextStyle(fontFamily: "Poppins", color: AppColors.white),
+          ),
         ),
-        const SizedBox(width: 10,),
+        const SizedBox(width: 10),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.orange,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             minimumSize: const Size(100, 45),
           ),
-          onPressed: () {
-            Navigator.of(context, rootNavigator: true).pop(); // chiude sempre
-            onCancel();
-          },
-          child: const Text("NO", style: TextStyle(fontFamily: "Poppins", color: AppColors.white)),
+          // ✅ Nessun Navigator.pop() qui
+          onPressed: onCancel,
+          child: const Text(
+            "NO",
+            style: TextStyle(fontFamily: "Poppins", color: AppColors.white),
+          ),
         ),
       ],
     );
   }
-
 }
