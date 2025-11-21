@@ -1,7 +1,10 @@
 import 'dart:convert'; // 👈 aggiungi questo
+import 'dart:typed_data';
+import 'package:Ecogrow/dashboard/pages/info_plant.dart';
 import 'package:flutter/material.dart';
 import '../../utility/app_colors.dart';
 import '../pages/models/plant.dart';
+import '../pages/service/plant_service.dart';
 
 class PlantCard extends StatelessWidget {
   final Plant plant;
@@ -11,6 +14,7 @@ class PlantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget imageWidget;
+    final String plantId = plant.id;
 
     if (plant.imageBase64 != null && plant.imageBase64!.isNotEmpty) {
       try {
@@ -68,17 +72,48 @@ class PlantCard extends StatelessWidget {
               Positioned(
                 top: 8,
                 right: 8,
-                child: Container(
-                  height: 28,
-                  width: 28,
-                  decoration: const BoxDecoration(
-                    color: AppColors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.info_outline,
-                    color: AppColors.green,
-                    size: 18,
+                child: GestureDetector(
+                  onTap: () async {
+                    final service = PlantService();
+
+                    // chiama il backend
+                    final (ok, message, plantData) = await service.getFullPlantInfo(plantId);
+
+                    if (!ok || plantData == null) {
+                      print("Errore: $message");
+                      return;
+                    }
+
+                    // aggiungi l'immagine ai dati completi
+                    Uint8List? bytes;
+                    if (plant.imageBase64 != null && plant.imageBase64!.isNotEmpty) {
+                      try {
+                        bytes = base64Decode(plant.imageBase64!);
+                      } catch (_) {}
+                    }
+
+                    plantData["imageBytes"] = bytes;
+
+                    // vai alla pagina
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InfoPlantPage(plant: plantData),
+                      ),
+                    );
+                  },
+                  child:  Container(
+                    height: 28,
+                    width: 28,
+                    decoration: const BoxDecoration(
+                      color: AppColors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.info_outline,
+                      color: AppColors.green,
+                      size: 18,
+                    ),
                   ),
                 ),
               ),

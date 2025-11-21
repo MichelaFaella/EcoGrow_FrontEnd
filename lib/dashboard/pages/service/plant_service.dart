@@ -140,4 +140,58 @@ class PlantService {
       return (false, 'Exception: $e', null);
     }
   }
+
+  /// Ottiene tutte le informazioni complete della pianta,
+  /// inclusa la foto compressa in Base64.
+  ///
+  /// Ritorna:
+  /// (ok, message, plant)
+  Future<(bool ok, String? message, Map<String, dynamic>? plant)>
+  getFullPlantInfo(String plantId) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, 'User not authenticated.', null);
+      }
+
+      final bearer = token.startsWith('Bearer ') ? token : 'Bearer $token';
+
+      final uri = Uri.parse('$baseUrl/plant/full/$plantId');
+
+      final res = await http.get(
+        uri,
+        headers: {
+          'Authorization': bearer,
+          'Accept': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+      );
+
+      print('[PlantService] GET /plant/full/$plantId Status: ${res.statusCode}');
+      print('[PlantService] Body: ${res.body}');
+
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map<String, dynamic>) {
+          return (true, null, decoded);
+        }
+        return (false, 'Invalid response format.', null);
+      }
+
+      // gestione errori
+      try {
+        final err = jsonDecode(res.body);
+        if (err is Map<String, dynamic>) {
+          return (false, err['error']?.toString(), null);
+        }
+        return (false, 'Error ${res.statusCode}', null);
+      } catch (_) {
+        return (false, 'Error ${res.statusCode}', null);
+      }
+    } catch (e) {
+      print('[PlantService] Exception GET /plant/full: $e');
+      return (false, 'Exception: $e', null);
+    }
+  }
+
 }
