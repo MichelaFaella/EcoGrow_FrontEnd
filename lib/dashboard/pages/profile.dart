@@ -7,6 +7,7 @@ import '../../authentication/service/auth_service.dart';
 import '../../authentication/login_page.dart';
 import '../../utility/app_colors.dart';
 import '../../utility/storage_service.dart';
+import '../../utility/toast.dart';
 import '../../utility/widget_utility.dart';
 import '../widgets/deleteDialog.dart';
 import 'models/user.dart';
@@ -163,14 +164,18 @@ class ProfilePage extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => PersonalPage(
-                                userId: user.id,        // REQUIRED FOR UPDATE
                                 name: user.firstName,
                                 surname: user.lastName,
                                 email: user.email,
                                 password: "",
                               ),
                             ),
-                          );
+                          ).then((updated) {
+                            if (updated == true) {
+                              // Force rebuild
+                              showToastCorrect(context, "Profile updated successfully!");
+                            }
+                          });
                         }
                       },
                       {

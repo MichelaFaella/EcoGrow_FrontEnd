@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../widgets/textfield.dart';
 
 class PersonalPage extends StatefulWidget {
-  final String userId;   // <--- AGGIUNTO
   final String name;
   final String surname;
   final String email;
@@ -13,7 +12,6 @@ class PersonalPage extends StatefulWidget {
 
   const PersonalPage({
     super.key,
-    required this.userId,
     required this.name,
     required this.surname,
     required this.email,
@@ -50,8 +48,8 @@ class _PersonalPageState extends State<PersonalPage> {
 
     final userService = UserService();
 
+    // 🔥 CHIAMATA PATCH (userId non serve)
     final (ok, message) = await userService.updateUser(
-      userId: widget.userId,
       firstName: nameCtrl.text.trim(),
       lastName: surnameCtrl.text.trim(),
       email: emailCtrl.text.trim(),
@@ -62,26 +60,19 @@ class _PersonalPageState extends State<PersonalPage> {
 
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message ?? "Update failed"),
-        ),
+        SnackBar(content: Text(message ?? "Update failed")),
       );
       return;
     }
 
-    // Aggiorna dati nello Storage
+    // 🔥 Aggiorno lo Storage SOLO dopo esito positivo
     await StorageService.saveUserInfo(
       firstName: nameCtrl.text.trim(),
       lastName: surnameCtrl.text.trim(),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Updated successfully"),
-      ),
-    );
-
-    Navigator.pop(context);
+    // 🔥 Ritorno TRUE alla pagina precedente
+    Navigator.pop(context, true);
   }
 
   @override
@@ -183,9 +174,7 @@ class _PersonalPageState extends State<PersonalPage> {
                           height: 50,
                           alignment: Alignment.center,
                           child: saving
-                              ? const CircularProgressIndicator(
-                            color: Colors.white,
-                          )
+                              ? const CircularProgressIndicator(color: Colors.white)
                               : const Text(
                             "CONFIRM",
                             style: TextStyle(
