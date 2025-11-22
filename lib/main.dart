@@ -11,9 +11,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Nasconde completamente barra di navigazione + barra superiore
-  SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.immersiveSticky,
-  );
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   runApp(const EcoGrowApp());
 }
@@ -57,12 +55,25 @@ class _RootPageState extends State<RootPage> {
 
   Future<void> _checkAuth() async {
     final token = await StorageService.getToken();
-    final done = await StorageService.isQuestionnaireDone();
+    final userId = await StorageService.getUserId();
 
     if (!mounted) return;
 
+    // NON autenticato → login
+    if (token == null || token.isEmpty || userId == null) {
+      setState(() {
+        _authenticated = false;
+        _questionnaireDone = false;
+        _loading = false;
+      });
+      return;
+    }
+
+    // Controllo flag per-utente
+    final done = await StorageService.isQuestionnaireDoneForUser(userId);
+
     setState(() {
-      _authenticated = token != null && token.isNotEmpty;
+      _authenticated = true;
       _questionnaireDone = done;
       _loading = false;
     });
@@ -74,14 +85,17 @@ class _RootPageState extends State<RootPage> {
       return const SplashScreen();
     }
 
+    // Non loggato
     if (!_authenticated) {
       return const LoginPage();
     }
 
+    // Loggato ma test NON fatto
     if (!_questionnaireDone) {
       return const TestPage();
     }
 
+    // Loggato + test completato
     return const DashboardPage();
   }
 }

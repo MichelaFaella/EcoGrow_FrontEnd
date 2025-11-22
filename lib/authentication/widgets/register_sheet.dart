@@ -48,7 +48,8 @@ class _RegisterSheetState extends State<RegisterSheet> {
       _isLoading = true;
     });
 
-    final (ok, msg) = await _authService.register(
+    // RECORD di Dart: (bool, String?)
+    final (bool ok, String? msg) = await _authService.register(
       email: _emailCtrl.text.trim(),
       password: _pwdCtrl.text,
       firstName: _nameCtrl.text.trim(),
@@ -58,21 +59,14 @@ class _RegisterSheetState extends State<RegisterSheet> {
     if (!mounted) return;
 
     if (ok) {
-      // toast successo
+      // ✅ Registrazione ok
       showToastCorrect(context, 'Welcome to EcoGrow!');
 
-      // chiudi il bottom sheet
-      Navigator.of(context).pop();
-
-      // poi naviga fuori dal sheet
-      Future.microtask(() {
-        if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardPage()),
-        );
-      });
+      // 👉 IMPORTANTISSIMO: chiudo il bottom sheet restituendo TRUE
+      Navigator.of(context).pop(true);
+      // NON andiamo più in Dashboard da qui.
     } else {
-      // toast errore, ma niente testo rosso nel widget
+      // ❌ Errore
       showToastWrong(context, msg ?? 'Registration failed');
 
       setState(() {

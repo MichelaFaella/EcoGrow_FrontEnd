@@ -115,16 +115,13 @@ class _TestPageState extends State<TestPage>
 
       final String id = q['id']?.toString() ?? '';
       final String text = q['text']?.toString() ?? '';
-      final List<dynamic> optsDyn = (q['options'] as List?) ?? const [];
       final List<String> opts =
-      optsDyn.map((o) => o.toString()).toList(growable: false);
-
-      final String title = 'QUESTION ${(i + 1).toString().padLeft(2, '0')}';
+      ((q['options'] as List?) ?? []).map((o) => o.toString()).toList();
 
       loaded.add(
         QuestionData(
           id: id,
-          title: title,
+          title: 'QUESTION ${(i + 1).toString().padLeft(2, "0")}',
           question: text,
           options: opts,
         ),
@@ -171,8 +168,13 @@ class _TestPageState extends State<TestPage>
     if (!mounted) return;
 
     if (ok) {
-      // 👉 SALVO IL FLAG
-      await StorageService.setQuestionnaireDone(true);
+      // 👉 PRENDO L'ID UTENTE
+      final userId = await StorageService.getUserId();
+
+      // 👉 SALVO IL FLAG PER QUELLO SPECIFICO UTENTE
+      if (userId != null) {
+        await StorageService.setQuestionnaireDoneForUser(userId, true);
+      }
 
       // 👉 NAVIGO ALLA DASHBOARD
       Navigator.of(context).pushAndRemoveUntil(
@@ -194,9 +196,7 @@ class _TestPageState extends State<TestPage>
   Future<void> _onNext() async {
     if (_selectedOption == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Seleziona una risposta prima di continuare'),
-        ),
+        const SnackBar(content: Text('Seleziona una risposta prima di continuare')),
       );
       return;
     }
@@ -282,9 +282,7 @@ class _TestPageState extends State<TestPage>
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.black,
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -323,10 +321,7 @@ class _TestPageState extends State<TestPage>
         body: Center(
           child: Text(
             'Nessuna domanda disponibile.',
-            style: TextStyle(
-              color: AppColors.white,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: AppColors.white, fontSize: 16),
           ),
         ),
       );
@@ -356,7 +351,7 @@ class _TestPageState extends State<TestPage>
               const SizedBox(height: 20),
               const Text(
                 'Help us create the best care schedule for you and your plants. '
-                    'Answer a few quick questions to tailor reminders to\n your routine.',
+                    'Answer a few quick questions to tailor reminders to your routine.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.white,
@@ -402,8 +397,7 @@ class _TestPageState extends State<TestPage>
                           onNext: () {},
                           onBack: null,
                           isLast: _currentIndex + 1 == _questions.length - 1,
-                          progress: (_currentIndex + 2) /
-                              _questions.length,
+                          progress: (_currentIndex + 2) / _questions.length,
                           isBehind: true,
                         ),
                       ),
