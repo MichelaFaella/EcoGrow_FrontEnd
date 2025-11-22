@@ -48,7 +48,7 @@ class _PersonalPageState extends State<PersonalPage> {
 
     final userService = UserService();
 
-    // 🔥 CHIAMATA PATCH (userId non serve)
+    // CHIAMATA PATCH (userId non serve)
     final (ok, message) = await userService.updateUser(
       firstName: nameCtrl.text.trim(),
       lastName: surnameCtrl.text.trim(),
@@ -65,13 +65,13 @@ class _PersonalPageState extends State<PersonalPage> {
       return;
     }
 
-    // 🔥 Aggiorno lo Storage SOLO dopo esito positivo
+    // Aggiorno lo Storage SOLO dopo esito positivo
     await StorageService.saveUserInfo(
       firstName: nameCtrl.text.trim(),
       lastName: surnameCtrl.text.trim(),
     );
 
-    // 🔥 Ritorno TRUE alla pagina precedente
+    // Ritorno TRUE alla pagina precedente
     Navigator.pop(context, true);
   }
 

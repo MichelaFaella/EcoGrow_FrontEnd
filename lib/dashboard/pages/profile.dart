@@ -1,3 +1,4 @@
+import 'package:Ecogrow/dashboard/pages/generate_pdf.dart';
 import 'package:Ecogrow/dashboard/pages/personal_info.dart';
 import 'package:Ecogrow/dashboard/pages/service/user_service.dart';
 import 'package:Ecogrow/dashboard/widgets/logoutDialog.dart';
@@ -205,7 +206,13 @@ class ProfilePage extends StatelessWidget {
                       {
                         "icon": Icons.share,
                         "text": "Share your garden",
-                        "onTap": () => debugPrint("Tap: Share your garden"),
+                        "onTap": () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                              builder: (context) => const GeneratePdfPage())
+                          );
+                        },
                       },
                     ],
                   ),
