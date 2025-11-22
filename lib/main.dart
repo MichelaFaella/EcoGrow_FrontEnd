@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'authentication/login_page.dart';
 import 'authentication/splash_screen.dart';
+import 'authentication/test.dart';
 import 'dashboard/dashboard_page.dart';
-import 'utility/app_colors.dart';
-import 'utility/storage_service.dart'; // <-- aggiungi questo import con il path giusto
+import 'utility/storage_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Nasconde completamente barra di navigazione + barra superiore
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.immersiveSticky,
+  );
+
   runApp(const EcoGrowApp());
 }
 
@@ -39,6 +47,7 @@ class RootPage extends StatefulWidget {
 class _RootPageState extends State<RootPage> {
   bool _loading = true;
   bool _authenticated = false;
+  bool _questionnaireDone = false;
 
   @override
   void initState() {
@@ -48,11 +57,13 @@ class _RootPageState extends State<RootPage> {
 
   Future<void> _checkAuth() async {
     final token = await StorageService.getToken();
+    final done = await StorageService.isQuestionnaireDone();
 
     if (!mounted) return;
 
     setState(() {
       _authenticated = token != null && token.isNotEmpty;
+      _questionnaireDone = done;
       _loading = false;
     });
   }
@@ -63,8 +74,14 @@ class _RootPageState extends State<RootPage> {
       return const SplashScreen();
     }
 
-    // se c'è il token vado in dashboard, altrimenti login
-    return _authenticated ? const DashboardPage() : LoginPage();
+    if (!_authenticated) {
+      return const LoginPage();
+    }
+
+    if (!_questionnaireDone) {
+      return const TestPage();
+    }
+
+    return const DashboardPage();
   }
 }
-

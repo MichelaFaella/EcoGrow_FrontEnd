@@ -5,7 +5,11 @@ class StorageService {
   static const _firstNameKey = "first_name";
   static const _lastNameKey = "last_name";
 
-  // TOKEN
+  // 🔥 il flag originario che NON cambiamo
+  static const _questionnaireDoneKey = "questionnaire_done";
+
+
+  // ========== TOKEN ==========
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
@@ -21,7 +25,8 @@ class StorageService {
     await prefs.remove(_tokenKey);
   }
 
-  // USER INFO
+
+  // ========== USER INFO ==========
   static Future<void> saveUserInfo({
     required String firstName,
     required String lastName,
@@ -41,17 +46,39 @@ class StorageService {
     return prefs.getString(_lastNameKey);
   }
 
-  static Future<void> clearUserInfo() async {
+
+  // ========== QUESTIONNAIRE FLAG ==========
+  // NON cambiamo nome alla funzione!
+  static Future<void> setQuestionnaireDone(bool done) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_firstNameKey);
-    await prefs.remove(_lastNameKey);
+    await prefs.setBool(_questionnaireDoneKey, done);
   }
 
-  // helper per pulire tutto in un colpo (utile nel logout)
-  static Future<void> clearAll() async {
+  // NON cambiamo nome alla funzione!
+  static Future<bool> isQuestionnaireDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_questionnaireDoneKey) ?? false;
+  }
+
+  // NON cambiamo nome alla funzione!
+  static Future<void> clearQuestionnaireFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_questionnaireDoneKey);
+  }
+
+
+  // ========== CLEAR ==========
+  // NON cambiamo nome, ma qui NON dobbiamo toccare il flag
+  static Future<void> clearUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_firstNameKey);
     await prefs.remove(_lastNameKey);
+  }
+
+  // NON cambiamo nome, ma qui dobbiamo cancellare TUTTO (delete account)
+  static Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();  // 🔥 reset totale
   }
 }

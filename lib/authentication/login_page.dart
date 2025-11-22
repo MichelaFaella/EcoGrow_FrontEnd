@@ -1,3 +1,4 @@
+import 'package:Ecogrow/authentication/test.dart';
 import 'package:Ecogrow/authentication/widgets/login_sheet.dart';
 import 'package:Ecogrow/authentication/widgets/register_sheet.dart';
 import 'package:flutter/cupertino.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../utility/app_colors.dart';
+import '../utility/storage_service.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -22,8 +24,9 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  void _showRegistrationSheet(BuildContext context){
-    showModalBottomSheet(
+  void _showRegistrationSheet(BuildContext context) async {
+    // 1. Apri il bottom sheet di registrazione
+    final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -31,7 +34,24 @@ class LoginPage extends StatelessWidget {
       ),
       builder: (context) => const RegisterSheet(),
     );
+
+    // Se il foglio è stato chiuso senza registrazione → NON navigare
+    if (result != true) return;
+
+    // 2. Reset del flag questionario per il nuovo utente
+    await StorageService.clearQuestionnaireFlag();
+
+    // 3. Vai alla pagina TestPage
+    if (context.mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const TestPage(),
+        ),
+      );
+    }
   }
+
+
 
   @override
   Widget build(BuildContext context) {

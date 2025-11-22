@@ -7,6 +7,29 @@ import '../models/user.dart';
 class UserService {
   final String baseUrl = 'https://ecogrow.loca.lt/api';
 
+  // ======================
+  // Helpers
+  // ======================
+
+  String _normalizeBearer(String token) {
+    final t = token.trim();
+    return t.startsWith('Bearer ') ? t : 'Bearer $t';
+  }
+
+  String? _extractError(String body) {
+    try {
+      final Map<String, dynamic> m = jsonDecode(body);
+      final e = m['error'];
+      return e == null ? null : e.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ======================
+  // Get utente corrente
+  // ======================
+
   Future<(bool ok, String? message, User? user)> getCurrentUser() async {
     try {
       final token = await StorageService.getToken();
@@ -14,8 +37,7 @@ class UserService {
         return (false, "User not authenticated.", null);
       }
 
-      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
-
+      final bearer = _normalizeBearer(token);
       final uri = Uri.parse("$baseUrl/user/me");
 
       final res = await http.get(
@@ -32,11 +54,77 @@ class UserService {
         return (true, null, User.fromJson(decoded));
       }
 
-      return (false, "Error ${res.statusCode}", null);
+      final extracted = _extractError(res.body);
+      return (false, extracted ?? "Error ${res.statusCode}", null);
     } catch (e) {
       return (false, "Exception: $e", null);
     }
   }
+
+  // ======================
+  // Delete utente corrente
+  // ======================
+
+  Future<bool> removeUser() async {
+    print('[UserService.removeUser] Deleting user via API');
+
+    // recupero il token salvato
+    final raw = await StorageService.getToken();
+    if (raw == null || raw.trim().isEmpty) {
+      print('[UserService.removeUser] Nessun token, non chiamo il backend');
+      await StorageService.clearAll();
+      return true; // lato client risulta comunque "pulito"
+    }
+
+    // Assicuro il formato "Bearer <token>"
+    final authHeader = _normalizeBearer(raw);
+
+    try {
+      final uri = Uri.parse('$baseUrl/user/delete-me');
+      print('[UserService.removeUser] DELETE $uri');
+
+      final res = await http.delete(
+        uri,
+        headers: {
+          'Authorization': authHeader,
+          'Accept': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+      );
+
+      print('[UserService.removeUser] status: ${res.statusCode}');
+      print('[UserService.removeUser] body: ${res.body}');
+
+      if (res.statusCode == 204 || res.statusCode == 200) {
+        print('[UserService.removeUser] Utente eliminato lato backend, pulisco storage');
+        await StorageService.clearAll();
+        return true;
+      } else if (res.statusCode == 401 || res.statusCode == 403) {
+        print('[UserService.removeUser] Non autorizzato, pulisco storage lo stesso');
+        await StorageService.clearAll();
+        return true;
+      } else {
+        final extracted = _extractError(res.body);
+        if (extracted != null) {
+          print('[UserService.removeUser] ERRORE backend: $extracted');
+        } else {
+          print(
+            '[UserService.removeUser] ERRORE generico. '
+                'status: ${res.statusCode}, body: ${res.body}',
+          );
+        }
+        return false;
+      }
+    } catch (e) {
+      print('[UserService.removeUser] Eccezione di rete: $e');
+      // errore di rete -> NON cancello lo storage, così l'utente può riprovare
+      return false;
+    }
+  }
+
+  // ======================
+  // Update utente
+  // ======================
 
   Future<(bool ok, String? message)> updateUser({
     String? firstName,
@@ -46,13 +134,12 @@ class UserService {
   }) async {
     try {
       final token = await StorageService.getToken();
-      if (token == null || token
-          .trim()
-          .isEmpty) {
+      if (token == null || token.trim().isEmpty) {
         return (false, "User not authenticated.");
       }
 
       final uri = Uri.parse("$baseUrl/user/update");
+      final bearer = _normalizeBearer(token);
 
       final Map<String, dynamic> body = {};
 
@@ -67,9 +154,7 @@ class UserService {
       final res = await http.patch(
         uri,
         headers: {
-          "Authorization": token.startsWith("Bearer ")
-              ? token
-              : "Bearer $token",
+          "Authorization": bearer,
           "Content-Type": "application/json",
           "Accept": "application/json",
           "Bypass-Tunnel-Reminder": "true",
@@ -82,7 +167,8 @@ class UserService {
       // errors
       try {
         final decoded = jsonDecode(res.body);
-        return (false, decoded["error"]?.toString());
+        final msg = decoded["error"]?.toString();
+        return (false, msg ?? "Error ${res.statusCode}");
       } catch (e) {
         return (false, "Error ${res.statusCode}");
       }

@@ -129,7 +129,7 @@ class AuthService {
 
       if (res.statusCode == 401 || res.statusCode == 403) {
         print('[AuthService.isAuthenticated] Token non valido/scaduto, lo cancello');
-        await StorageService.clearAll();
+        await StorageService.clearUserInfo();
       }
 
       return false;
@@ -138,6 +138,103 @@ class AuthService {
       return false;
     }
   }
+
+  /// Fetch questionnaire questions for the logged-in user
+  Future<(bool ok, String? message, List<dynamic> questions)>
+  fetchQuestionnaireQuestions() async {
+    final raw = await StorageService.getToken();
+    if (raw == null || raw.trim().isEmpty) {
+      return (false, 'Token mancante. Devi effettuare il login.', const []);
+    }
+
+    final authHeader =
+    raw.trim().startsWith('Bearer ') ? raw.trim() : 'Bearer ${raw.trim()}';
+
+    try {
+      final uri = Uri.parse('$baseUrl/questionnaire/questions');
+      print('[AuthService.fetchQuestionnaireQuestions] GET $uri');
+
+      final res = await http.get(
+        uri,
+        headers: {
+          'Authorization': authHeader,
+          'Accept': 'application/json',
+        },
+      );
+
+      print(
+          '[AuthService.fetchQuestionnaireQuestions] status: ${res.statusCode}');
+      print(
+          '[AuthService.fetchQuestionnaireQuestions] body: ${res.body}');
+
+      if (res.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(res.body);
+        return (true, null, body);
+      } else {
+        final extracted = _extractError(res.body);
+        return (
+        false,
+        extracted ??
+            'Errore nel recupero del questionario (${res.statusCode}).',
+        const []
+        );
+      }
+    } catch (e) {
+      print('[AuthService.fetchQuestionnaireQuestions] Eccezione: $e');
+      return (false, 'Errore di rete: $e', const []);
+    }
+  }
+
+  /// Submit questionnaire answers for the logged-in user
+  ///
+  /// answers: { "<question_id>": "1", "<question_id>": "3", ... }
+  Future<(bool ok, String? message)> submitQuestionnaireAnswers(
+      Map<String, String> answers) async {
+    final raw = await StorageService.getToken();
+    if (raw == null || raw.trim().isEmpty) {
+      return (false, 'Token mancante. Devi effettuare il login.');
+    }
+
+    final authHeader =
+    raw.trim().startsWith('Bearer ') ? raw.trim() : 'Bearer ${raw.trim()}';
+
+    try {
+      final uri = Uri.parse('$baseUrl/questionnaire/answers');
+      print('[AuthService.submitQuestionnaireAnswers] POST $uri');
+      print('[AuthService.submitQuestionnaireAnswers] body: '
+          '${jsonEncode({"answers": answers})}');
+
+      final res = await http.post(
+        uri,
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({"answers": answers}),
+      );
+
+      print(
+          '[AuthService.submitQuestionnaireAnswers] status: ${res.statusCode}');
+      print(
+          '[AuthService.submitQuestionnaireAnswers] body: ${res.body}');
+
+      if (res.statusCode == 200) {
+        return (true, null);
+      } else {
+        final extracted = _extractError(res.body);
+        return (
+        false,
+        extracted ??
+            'Errore nel salvataggio del questionario (${res.statusCode}).'
+        );
+      }
+    } catch (e) {
+      print('[AuthService.submitQuestionnaireAnswers] Eccezione: $e');
+      return (false, 'Errore di rete: $e');
+    }
+  }
+
 
   /// Register user, save token + user info
   Future<(bool ok, String? message)> register({
@@ -226,7 +323,7 @@ class AuthService {
   /// Remove token + user info locally
   Future<void> logout() async {
     print('[AuthService.logout] Clearing token and user info');
-    await StorageService.clearAll();
+    await StorageService.clearUserInfo();
   }
 
   /// Delete user via API + clear local storage

@@ -174,7 +174,8 @@ class ProfilePage extends StatelessWidget {
                           ).then((updated) {
                             if (updated == true) {
                               // Force rebuild
-                              showToastCorrect(context, "Profile updated successfully!");
+                              showToastCorrect(
+                                  context, "Profile updated successfully!");
                             }
                           });
                         }
@@ -208,9 +209,10 @@ class ProfilePage extends StatelessWidget {
                         "text": "Share your garden",
                         "onTap": () {
                           Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                              builder: (context) => const GeneratePdfPage())
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const GeneratePdfPage(),
+                            ),
                           );
                         },
                       },
@@ -256,16 +258,32 @@ class ProfilePage extends StatelessWidget {
                             context: context,
                             builder: (_) => DeleteAccountDialog(
                               onConfirm: () async {
-                                final auth = AuthService();
-                                await auth.removeUser();
+                                final userService = UserService();
+                                final ok =
+                                await userService.removeUser();
 
-                                Navigator.of(context, rootNavigator: true)
-                                    .pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginPage(),
-                                  ),
-                                      (route) => false,
-                                );
+                                if (!context.mounted) return;
+
+                                if (ok) {
+                                  Navigator.of(
+                                      context, rootNavigator: true)
+                                      .pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginPage(),
+                                    ),
+                                        (route) => false,
+                                  );
+                                } else {
+                                  Navigator.pop(context); // chiudi dialog
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Errore nella cancellazione dell’account',
+                                      ),
+                                    ),
+                                  );
+                                }
                               },
                               onCancel: () => Navigator.pop(context),
                             ),

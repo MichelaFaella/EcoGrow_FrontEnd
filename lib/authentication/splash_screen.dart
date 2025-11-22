@@ -10,27 +10,17 @@ class SplashScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.black,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.local_florist,
-              color: AppColors.green,
-              size: screenWidth * 0.25,
+            Image.asset(
+              'images/EcoGrow.png',
+              width: 300,
             ),
             SizedBox(height: screenWidth * 0.05),
-            Text(
-              'EcoGrow',
-              style: TextStyle(
-                color: AppColors.green,
-                fontSize: screenWidth * 0.08,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: screenWidth * 0.1),
-            const CircularProgressIndicator(color: AppColors.green),
+            const CircularProgressIndicator(color: AppColors.dark_green),
           ],
         ),
       ),
