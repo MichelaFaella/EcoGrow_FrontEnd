@@ -18,10 +18,10 @@ class AdditionalInfoSection extends StatelessWidget {
   });
 
   Color _circleColor(bool active) =>
-      active ? AppColors.green : Colors.white;
+      active ? AppColors.dark_green : AppColors.white;
 
   Color _circleBorder(bool active) =>
-      active ? AppColors.green : Colors.black.withOpacity(0.3);
+      active ? AppColors.white : Colors.black.withOpacity(0.3);
 
   Widget _buildLevelBar(String label, int? level) {
     return Column(
@@ -36,25 +36,30 @@ class AdditionalInfoSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
+
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(5, (i) {
             final active = level != null && level == (i + 1);
-            return Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _circleColor(active),
-                border: Border.all(color: _circleBorder(active)),
-              ),
-              child: Center(
-                child: Text(
-                  "${i + 1}",
-                  style: TextStyle(
-                    color: active ? Colors.white : Colors.black,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _circleColor(active),
+                  border: Border.all(color: _circleBorder(active)),
+                ),
+                child: Center(
+                  child: Text(
+                    "${i + 1}",
+                    style: TextStyle(
+                      color: active ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -66,6 +71,9 @@ class AdditionalInfoSection extends StatelessWidget {
   }
 
   Widget _buildTemperatureBar(int min, int max) {
+    const int globalMin = 0;
+    const int globalMax = 100;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -79,61 +87,100 @@ class AdditionalInfoSection extends StatelessWidget {
         ),
         const SizedBox(height: 10),
 
-        // BAR
         LayoutBuilder(
           builder: (context, constraints) {
-            final fullWidth = constraints.maxWidth;
+            final totalWidth = constraints.maxWidth;
+
+            // Posizioni in pixel per le barrette
+            final minPos = ((min - globalMin) / (globalMax - globalMin)) * totalWidth;
+            final maxPos = ((max - globalMin) / (globalMax - globalMin)) * totalWidth;
 
             return Column(
               children: [
-                Row(
-                  children: [
-                    // Linea sinistra
-                    Container(
-                      width: 2,
-                      height: 20,
-                      color: Colors.black,
-                    ),
-
-                    // Barra verde
-                    Expanded(
-                      child: Container(
-                        height: 2,
-                        color: AppColors.green,
+                // ----------------- BARRA + BARRETTE -----------------
+                SizedBox(
+                  height: 22,
+                  child: Stack(
+                    children: [
+                      // Barra nera intera
+                      Positioned(
+                        top: 10,
+                        child: Container(
+                          width: totalWidth,
+                          height: 2,
+                          color: Colors.black,
+                        ),
                       ),
-                    ),
 
-                    // Linea destra
-                    Container(
-                      width: 2,
-                      height: 20,
-                      color: Colors.black,
-                    ),
-                  ],
+                      // Barretta min
+                      Positioned(
+                        left: minPos - 1,
+                        child: Container(
+                          width: 2,
+                          height: 20,
+                          color: Colors.black,
+                        ),
+                      ),
+
+                      // Barretta max
+                      Positioned(
+                        left: maxPos - 1,
+                        child: Container(
+                          width: 2,
+                          height: 20,
+                          color: Colors.black,
+                        ),
+                      ),
+
+                      // Barra verde tra min e max
+                      Positioned(
+                        top: 10,
+                        left: minPos,
+                        child: Container(
+                          width: maxPos - minPos,
+                          height: 2,
+                          color: AppColors.dark_green,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "$min",
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.light_black,
-                        fontWeight: FontWeight.w600,
+                // -------------- NUMERI ESATTAMENTE SOTTO LE BARRETTE --------------
+                SizedBox(
+                  height: 16,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Numero min centrato alla barretta min
+                      Positioned(
+                        left: minPos - 10, // valore perfetto per centrare testo
+                        child: Text(
+                          "$min",
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.light_black,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      "$max",
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.light_black,
-                        fontWeight: FontWeight.w600,
+
+                      // Numero max centrato alla barretta max
+                      Positioned(
+                        left: maxPos - 10,
+                        child: Text(
+                          "$max",
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.light_black,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 )
               ],
             );
@@ -143,7 +190,7 @@ class AdditionalInfoSection extends StatelessWidget {
     );
   }
 
-  @override
+
   @override
   Widget build(BuildContext context) {
     return Center( // 👈 centra tutto
@@ -182,9 +229,9 @@ class AdditionalInfoSection extends StatelessWidget {
               Text(
                 size!.toUpperCase(),
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.green,
+                  color: AppColors.dark_green,
                 ),
               ),
               const SizedBox(height: 20),
