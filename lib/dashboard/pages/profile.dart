@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:Ecogrow/dashboard/pages/add_friends.dart';
 import 'package:Ecogrow/dashboard/pages/generate_pdf.dart';
 import 'package:Ecogrow/dashboard/pages/personal_info.dart';
 import 'package:Ecogrow/dashboard/pages/service/user_service.dart';
@@ -534,7 +535,7 @@ class ProfilePage extends StatelessWidget {
                       {
                         "icon": Icons.group,
                         "text": "Friends",
-                        "onTap": () => debugPrint("Tap: Friends"),
+                        "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddFriendsPage())),
                       },
                     ],
                   ),
