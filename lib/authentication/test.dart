@@ -168,13 +168,8 @@ class _TestPageState extends State<TestPage>
     if (!mounted) return;
 
     if (ok) {
-      // 👉 PRENDO L'ID UTENTE
-      final userId = await StorageService.getUserId();
-
-      // 👉 SALVO IL FLAG PER QUELLO SPECIFICO UTENTE
-      if (userId != null) {
-        await StorageService.setQuestionnaireDoneForUser(userId, true);
-      }
+      // 👉 SALVO IL FLAG GLOBALE: questionario completato
+      await StorageService.setQuestionnaireDone(true);
 
       // 👉 NAVIGO ALLA DASHBOARD
       Navigator.of(context).pushAndRemoveUntil(

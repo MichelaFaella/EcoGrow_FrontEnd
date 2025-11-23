@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'authentication/login_page.dart';
 import 'authentication/splash_screen.dart';
 import 'authentication/test.dart';
@@ -10,7 +11,13 @@ import 'utility/storage_service.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Nasconde completamente barra di navigazione + barra superiore
+  // Inizializza il database dei fusi orari per device_calendar
+  tz.initializeTimeZones();
+  // opzionale: puoi impostare una location specifica, ma tz.local di solito va bene
+  // tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+
+
+  // Nasconde completamente barra superiore + barra di navigazione
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   runApp(const EcoGrowApp());
@@ -55,12 +62,11 @@ class _RootPageState extends State<RootPage> {
 
   Future<void> _checkAuth() async {
     final token = await StorageService.getToken();
-    final userId = await StorageService.getUserId();
 
     if (!mounted) return;
 
-    // NON autenticato → login
-    if (token == null || token.isEmpty || userId == null) {
+    // Nessun token → utente non loggato
+    if (token == null || token.isEmpty) {
       setState(() {
         _authenticated = false;
         _questionnaireDone = false;
@@ -69,8 +75,8 @@ class _RootPageState extends State<RootPage> {
       return;
     }
 
-    // Controllo flag per-utente
-    final done = await StorageService.isQuestionnaireDoneForUser(userId);
+    // Token presente → utente autenticato
+    final done = await StorageService.isQuestionnaireDone();
 
     setState(() {
       _authenticated = true;
@@ -90,12 +96,12 @@ class _RootPageState extends State<RootPage> {
       return const LoginPage();
     }
 
-    // Loggato ma test NON fatto
+    // Loggato ma non ha completato il questionario
     if (!_questionnaireDone) {
       return const TestPage();
     }
 
-    // Loggato + test completato
+    // Loggato e questionario completato
     return const DashboardPage();
   }
 }

@@ -53,6 +53,8 @@
 	<string>This app needs access to your photo library to select and save pictures.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app may need microphone access for camera video recording.</string>
+	<key>NSCalendarsUsageDescription</key>
+    <string>This app needs access to your calendar to add watering reminders.</string>
 
 </dict>
 </plist>

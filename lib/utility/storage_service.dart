@@ -1,29 +1,13 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
+  // Token e info utente
   static const _tokenKey = "auth_token";
   static const _firstNameKey = "first_name";
   static const _lastNameKey = "last_name";
-  static const _userIdKey = "current_user_id";
 
-  // =====================================================================
-  //                           USER ID
-  // =====================================================================
-
-  static Future<void> saveUserId(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userIdKey, userId);
-  }
-
-  static Future<String?> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userIdKey);
-  }
-
-  static Future<void> clearUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userIdKey);
-  }
+  // Flag globale questionario (NON più per utente)
+  static const _questionnaireDoneKey = "questionnaire_done";
 
   // =====================================================================
   //                             TOKEN
@@ -45,7 +29,7 @@ class StorageService {
   }
 
   // =====================================================================
-  //                           USER INFO
+  //                      USER INFO (nome/cognome)
   // =====================================================================
 
   static Future<void> saveUserInfo({
@@ -68,29 +52,25 @@ class StorageService {
   }
 
   // =====================================================================
-  //                     QUESTIONNAIRE FLAG PER UTENTE
+  //                     QUESTIONNAIRE FLAG GLOBALE
   // =====================================================================
 
-  static Future<void> setQuestionnaireDoneForUser(String userId, bool done) async {
+  /// Imposta se il questionario è stato completato su QUESTO device
+  static Future<void> setQuestionnaireDone(bool done) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool("questionnaire_done_user_$userId", done);
+    await prefs.setBool(_questionnaireDoneKey, done);
   }
 
-  static Future<bool> isQuestionnaireDoneForUser(String userId) async {
+  /// Ritorna true se il questionario risulta completato su questo device
+  static Future<bool> isQuestionnaireDone() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool("questionnaire_done_user_$userId") ?? false;
+    return prefs.getBool(_questionnaireDoneKey) ?? false;
   }
 
-  // Cancella SOLO i flag questionari di tutti gli utenti
-  static Future<void> clearAllQuestionnaireFlags() async {
+  /// Pulisce SOLO tutti i flag questionario
+  static Future<void> clearQuestionnaireFlag() async {
     final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys();
-
-    for (final key in keys) {
-      if (key.startsWith("questionnaire_done_user_")) {
-        await prefs.remove(key);
-      }
-    }
+    await prefs.remove(_questionnaireDoneKey);
   }
 
   // =====================================================================
@@ -102,7 +82,9 @@ class StorageService {
     await prefs.remove(_tokenKey);
     await prefs.remove(_firstNameKey);
     await prefs.remove(_lastNameKey);
-    await prefs.remove(_userIdKey);
+
+    // Se vuoi, puoi anche azzerare il questionario al logout
+    // await prefs.remove(_questionnaireDoneKey);
   }
 
   // =====================================================================
