@@ -535,7 +535,15 @@ class ProfilePage extends StatelessWidget {
                       {
                         "icon": Icons.group,
                         "text": "Friends",
-                        "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddFriendsPage())),
+                        "onTap": () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddFriendsPage(),
+                            ),
+                          );
+                        },
+
                       },
                     ],
                   ),

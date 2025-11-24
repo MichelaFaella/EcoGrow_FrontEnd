@@ -176,4 +176,126 @@ class UserService {
       return (false, "Exception: $e");
     }
   }
+
+  // ======================
+// Ottieni short_id + lista amici
+// ======================
+
+  Future<(bool ok, String? error, String? shortId, List<dynamic>? friends)>
+  getFriendshipSummary() async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.", null, null);
+      }
+
+      final bearer = _normalizeBearer(token);
+      final uri = Uri.parse("$baseUrl/friendship/summary");
+
+      final res = await http.get(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      print("[UserService.getFriendshipSummary] status=${res.statusCode}");
+      print("[UserService.getFriendshipSummary] body=${res.body}");
+
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final shortId = decoded["short_id"]?.toString();
+        final friends = decoded["my_friends"] as List<dynamic>;
+        return (true, null, shortId, friends);
+      }
+
+      final extracted = _extractError(res.body);
+      return (false, extracted ?? "Error ${res.statusCode}", null, null);
+    } catch (e) {
+      return (false, "Exception: $e", null, null);
+    }
+  }
+
+
+  Future<(bool ok, String? error)> addFriendByShortId(String shortId) async {
+    try {
+      if (shortId.trim().isEmpty) {
+        return (false, "Short ID cannot be empty");
+      }
+
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "Not authenticated");
+      }
+
+      final uri = Uri.parse("$baseUrl/friendship/add-by-short");
+      final auth = _normalizeBearer(token);
+
+      print("[UserService.addFriendByShortId] POST → $uri  short_id=$shortId");
+
+      final res = await http.post(
+        uri,
+        headers: {
+          "Authorization": auth,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+        body: jsonEncode({"short_id": shortId.trim()}),
+      );
+
+      print("[UserService.addFriendByShortId] status=${res.statusCode}");
+      print("[UserService.addFriendByShortId] body=${res.body}");
+
+      // -------- SUCCESS --------
+      if (res.statusCode == 201) {
+        return (true, null);
+      }
+
+      // -------- PARSE ERROR --------
+      try {
+        final decoded = jsonDecode(res.body);
+        final msg = decoded["error"]?.toString();
+        return (false, msg ?? "Error ${res.statusCode}");
+      } catch (_) {
+        return (false, "Error ${res.statusCode}: ${res.reasonPhrase}");
+      }
+    } catch (e) {
+      print("[UserService.addFriendByShortId] Exception → $e");
+      return (false, "Exception: $e");
+    }
+  }
+
+  // ======================
+// DELETE FRIENDSHIP
+// ======================
+  Future<(bool ok, String? error)> deleteFriendship(String fid) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "Not authenticated");
+      }
+
+      final uri = Uri.parse("$baseUrl/friendship/delete/$fid");
+      final auth = _normalizeBearer(token);
+
+      final res = await http.delete(
+        uri,
+        headers: {
+          "Authorization": auth,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      if (res.statusCode == 204) return (true, null);
+
+      final decoded = jsonDecode(res.body);
+      return (false, decoded["error"]?.toString() ?? "Error ${res.statusCode}");
+    } catch (e) {
+      return (false, "Exception: $e");
+    }
+  }
 }
