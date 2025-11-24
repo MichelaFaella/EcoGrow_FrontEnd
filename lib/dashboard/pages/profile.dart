@@ -4,6 +4,7 @@ import 'package:Ecogrow/dashboard/pages/service/user_service.dart';
 import 'package:Ecogrow/dashboard/pages/subpages/add_friends.dart';
 import 'package:Ecogrow/dashboard/pages/subpages/generate_pdf.dart';
 import 'package:Ecogrow/dashboard/pages/subpages/personal_info.dart';
+import 'package:Ecogrow/dashboard/pages/subpages/shared_plant.dart';
 import 'package:Ecogrow/dashboard/pages/widgets/deleteDialog.dart';
 import 'package:Ecogrow/dashboard/pages/widgets/logoutDialog.dart';
 import 'package:device_calendar/device_calendar.dart';
@@ -557,7 +558,12 @@ class ProfilePage extends StatelessWidget {
                       {
                         "icon": Icons.eco,
                         "text": "Shared plants",
-                        "onTap": () => debugPrint("Tap: Shared plants"),
+                        "onTap": () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SharedPlantPage(),
+                            ),
+                          )
                       },
                       {
                         "icon": Icons.calendar_month,

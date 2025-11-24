@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:Ecogrow/utility/app_colors.dart';
 
 class FriendsCard extends StatelessWidget {
-  final String title;          // es. "Adiantum raddianum"
-  final String subtitle;       // es. "“Fragrans”"
-  final String ownerName;      // es. "Franco Farina"
-  final ImageProvider image;   // es. AssetImage("images/plant1.jpg")
+  final String title;
+  final String subtitle;
+  final String ownerName;      // se "" → non viene mostrato
+  final ImageProvider image;
   final VoidCallback? onTap;
 
   const FriendsCard({
@@ -19,19 +19,21 @@ class FriendsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasOwner = ownerName.trim().isNotEmpty;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
-          height: 80,
+          height: 90,
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: AppColors.light_gray,
             borderRadius: BorderRadius.circular(20),
             boxShadow: const [
               BoxShadow(
-                color: Colors.black12,
+                color: AppColors.dark_gray,
                 blurRadius: 8,
                 offset: Offset(0, 4),
               ),
@@ -46,7 +48,7 @@ class FriendsCard extends StatelessWidget {
                   bottomLeft: Radius.circular(20),
                 ),
                 child: SizedBox(
-                  width: 80,
+                  width: 90,
                   height: double.infinity,
                   child: Image(
                     image: image,
@@ -55,7 +57,7 @@ class FriendsCard extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 12),
+              const SizedBox(width: 20),
 
               // Testi centrali
               Expanded(
@@ -63,7 +65,6 @@ class FriendsCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Titolo
                     Text(
                       title,
                       maxLines: 1,
@@ -76,7 +77,6 @@ class FriendsCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    // Sottotitolo
                     Text(
                       subtitle,
                       maxLines: 1,
@@ -89,62 +89,61 @@ class FriendsCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    // Owner
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.groups,
-                          size: 16,
-                          color: AppColors.green,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            ownerName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 12,
-                              color: AppColors.green,
-                              fontWeight: FontWeight.w500,
+
+                    // Owner → solo se condivisa
+                    if (hasOwner)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.groups,
+                            size: 16,
+                            color: AppColors.green,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              ownerName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                color: AppColors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
               ),
 
               const SizedBox(width: 8),
 
-              // Icona mute a destra
+              // Icona a destra (rimane uguale, la userai per share/unshare)
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: Container(
-                  width: 38,
-                  height: 38,
+                  width: 52,
+                  height: 52,
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 6,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
                   ),
                   child: Center(
                     child: Icon(
-                      Icons.person_off_rounded,
-                      size: 22,
-                      color: Colors.red.shade600,
+                      ownerName.trim().isEmpty
+                          ? Icons.person_add_alt_1_rounded   // <-- PIANTA PRIVATA → AGGIUNGI
+                          : Icons.person_off_rounded,        // <-- PIANTA CONDIVISA → RIMUOVI
+                      size: 32,
+                      color: ownerName.trim().isEmpty
+                          ? AppColors.green                   // aggiungi → verde
+                          : AppColors.red,                    // rimuovi → rosso
                     ),
                   ),
                 ),
-              ),
+              )
             ],
           ),
         ),
@@ -152,3 +151,4 @@ class FriendsCard extends StatelessWidget {
     );
   }
 }
+

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
@@ -194,4 +194,206 @@ class PlantService {
     }
   }
 
+  Future<(bool ok, String? message, List<Map<String, dynamic>>? shared)>
+  getSharedPlants() async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.", null);
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+      final uri = Uri.parse("$baseUrl/shared_plant/all");
+
+      final res = await http.get(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      print("[PlantService] GET /shared_plant/all status: ${res.statusCode}");
+
+      if (res.statusCode != 200) {
+        try {
+          final err = jsonDecode(res.body);
+          return (false, err["error"]?.toString(), null);
+        } catch (_) {
+          return (false, "Error ${res.statusCode}", null);
+        }
+      }
+
+      final decoded = jsonDecode(res.body);
+      if (decoded is! List) return (false, "Invalid response format.", null);
+
+      final List<Map<String, dynamic>> list = [];
+
+      for (final item in decoded) {
+        if (item is! Map<String, dynamic>) continue;
+
+        Uint8List? bytes;
+        final b64 = item["photo_base64"] as String?;
+        if (b64 != null && b64.isNotEmpty) {
+          try {
+            bytes = base64Decode(b64);
+          } catch (_) {}
+        }
+
+        final first = item["friend_first_name"]?.toString() ?? "";
+        final last  = item["friend_last_name"]?.toString() ?? "";
+        final full  = "$first $last".trim();
+
+        list.add({
+          "shared_id": item["shared_id"]?.toString(),
+          "plant_id": item["plant_id"]?.toString(),
+          "name": item["plant_name"]?.toString() ?? "",
+          "nickname": item["nickname"]?.toString() ?? "",
+          "friend_full_name": full,
+          "image_bytes": bytes,       // <--- coerente con tutto il resto
+        });
+      }
+
+      return (true, null, list);
+    } catch (e) {
+      return (false, "Exception: $e", null);
+    }
+  }
+
+
+
+  Future<(bool ok, String? message, List<Map<String, dynamic>>? plants)>
+  getNonSharedPlants() async {
+    final (okAll, msgAll, allPlants) = await getAllUserPlants();
+    if (!okAll || allPlants == null) {
+      return (false, msgAll, null);
+    }
+
+    final (okShared, msgShared, shared) = await getSharedPlants();
+    if (!okShared || shared == null) {
+      return (false, msgShared, null);
+    }
+
+    final sharedIds = shared
+        .map((m) => m["plant_id"])
+        .where((id) => id != null)
+        .toSet();
+
+    final List<Map<String, dynamic>> out = [];
+
+    for (final item in allPlants) {
+      if (item is! Map<String, dynamic>) continue;
+
+      final plant = item["plant"] as Map<String, dynamic>?;
+      final plantId = plant?["id"]?.toString() ??
+          item["plant_id"]?.toString();
+
+      if (plantId == null) continue;
+      if (sharedIds.contains(plantId)) continue;
+
+      final name =
+          plant?["common_name"]?.toString() ??
+              plant?["scientific_name"]?.toString() ??
+              "";
+
+      final nickname = item["nickname"]?.toString() ?? "";
+
+      // ---- FOTO BASE64 → Uint8List ----
+      Uint8List? bytes;
+      final photos = plant?["photos"];
+      if (photos is List && photos.isNotEmpty && photos.first is Map) {
+        final imgB64 = (photos.first as Map)["image"] as String?;
+        if (imgB64 != null && imgB64.isNotEmpty) {
+          try {
+            bytes = base64Decode(imgB64);
+          } catch (_) {}
+        }
+      }
+
+      out.add({
+        "plant_id": plantId,
+        "name": name,
+        "nickname": nickname,
+        "image_bytes": bytes,     // <--- stessa struttura delle shared
+      });
+    }
+
+    return (true, null, out);
+  }
+
+
+
+  Future<(bool ok, String? message)> sharePlant({
+    required String plantId,
+    required String shortId,
+  }) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.");
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+      final uri = Uri.parse("$baseUrl/shared_plant/add");
+
+      final res = await http.post(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+        body: jsonEncode({
+          "plant_id": plantId,
+          "short_id": shortId,
+        }),
+      );
+
+      print("[PlantService] POST /shared_plant/add status: ${res.statusCode}");
+      print("[PlantService] body: ${res.body}");
+
+      if (res.statusCode == 201) return (true, null);
+
+      final decoded = jsonDecode(res.body);
+      return (false, decoded["error"]?.toString() ?? "Error ${res.statusCode}");
+    } catch (e) {
+      return (false, "Exception: $e");
+    }
+  }
+
+  Future<(bool ok, String? message)> unsharePlant(String sharedPlantId) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.");
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+      final uri = Uri.parse("$baseUrl/shared_plant/delete/$sharedPlantId");
+
+      final res = await http.delete(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      print("[PlantService] DELETE /shared_plant/delete status: ${res.statusCode}");
+
+      if (res.statusCode == 204) return (true, null);
+
+      try {
+        final err = jsonDecode(res.body);
+        return (false, err["error"]?.toString());
+      } catch (_) {
+        return (false, "Error ${res.statusCode}");
+      }
+    } catch (e) {
+      return (false, "Exception: $e");
+    }
+  }
 }
