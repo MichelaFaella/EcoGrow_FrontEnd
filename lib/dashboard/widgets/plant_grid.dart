@@ -46,7 +46,7 @@ class _PlantGridState extends State<PlantGrid> {
   List<Plant> _applyFilter() {
     List<Plant> filtered = [...plants];
 
-    // ✅ ORDER BY SIZE (logico, non alfabetico)
+    // ORDER BY SIZE (logico, non alfabetico)
     if (widget.filter == 'SIZE') {
       const sizeOrder = {
         "small": 0,

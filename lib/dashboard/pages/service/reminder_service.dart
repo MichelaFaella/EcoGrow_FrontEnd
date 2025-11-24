@@ -103,14 +103,44 @@ class ReminderService {
       );
 
       print("→ Status: ${res.statusCode}");
-      print("→ Raw response:");
+      print("→ Raw response START");
       print(res.body);
+      print("→ Raw response END");
+
+      // --------------------------
+      // DEBUG FOTO BASE64
+      // --------------------------
+      try {
+        final decoded = json.decode(res.body);
+        if (decoded is List) {
+          print("→ DEBUG FOTO BASE64:");
+          for (final day in decoded) {
+            final plants = day["plants"] ?? [];
+            for (final p in plants) {
+              final name = p["plant_name"];
+              final base64 = p["photo_base64"];
+
+              print("  • Pianta: $name");
+              print("    photo_base64 exists? ${base64 != null}");
+              if (base64 != null) {
+                print("    length: ${base64.length}");
+                final preview = base64.length > 50 ? base64.substring(0, 50) : base64;
+                print("    preview: $preview");
+              }
+            }
+          }
+        }
+      } catch (e) {
+        print("Errore debug base64: $e");
+      }
+
+      // --------------------------
 
       if (res.statusCode == 200) {
         final body = json.decode(res.body);
         if (body is List) {
           final days = body
-              .whereType<Map>() // List<Map>
+              .whereType<Map>()
               .map((e) => e.cast<String, dynamic>())
               .toList();
           return (true, null, days);
@@ -119,7 +149,6 @@ class ReminderService {
         }
       }
 
-      // provo a leggere un error dal server
       try {
         final body = json.decode(res.body);
         if (body is Map && body['error'] is String) {
@@ -132,4 +161,85 @@ class ReminderService {
       return (false, 'Network error: $e', null);
     }
   }
+
+  Future<(bool ok, String?)> undoWatering(String plantId) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.isEmpty) {
+        return (false, "Not authenticated");
+      }
+
+      final uri = Uri.parse("$baseUrl/plant/$plantId/watering/undo");
+
+      final res = await http.post(
+        uri,
+        headers: {
+          "Authorization": _normalizeBearer(token),
+          "Content-Type": "application/json",
+        },
+      );
+
+      if (res.statusCode == 200) {
+        return (true, null);
+      }
+
+      final body = jsonDecode(res.body);
+      final String? msg = (body is Map && body["error"] is String)
+          ? body["error"] as String
+          : "Server error";
+
+      return (false, msg);
+    } catch (e) {
+      return (false, "Network error: $e");
+    }
+  }
+
+
+  Future<(bool ok, String? message, Map<String, dynamic>?)> doWatering({
+    required String plantId,
+    required int amountMl,
+    String? note,
+  }) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.isEmpty) {
+        return (false, "Not authenticated", null);
+      }
+
+      final uri = Uri.parse("$baseUrl/plant/$plantId/watering/do");
+
+      final res = await http.post(
+        uri,
+        headers: {
+          "Authorization": _normalizeBearer(token),
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "amount_ml": amountMl,
+          if (note != null) "note": note,
+          "done_at": DateTime.now().toIso8601String(),
+        }),
+      );
+
+      print("→ watering/do STATUS: ${res.statusCode}");
+      print("→ watering/do RAW: ${res.body}");
+
+      if (res.statusCode == 200) {
+        return (true, null, jsonDecode(res.body) as Map<String, dynamic>);
+      } else {
+        final decoded = jsonDecode(res.body);
+
+        final String? errorMsg =
+        (decoded is Map && decoded["error"] is String)
+            ? decoded["error"] as String
+            : "Server error";
+
+        return (false, errorMsg, null);
+      }
+    } catch (e) {
+      return (false, "Network error: $e", null);
+    }
+  }
+
+
 }

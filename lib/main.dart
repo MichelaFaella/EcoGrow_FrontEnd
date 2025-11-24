@@ -2,22 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
 import 'authentication/login_page.dart';
 import 'authentication/splash_screen.dart';
 import 'authentication/test.dart';
 import 'dashboard/dashboard_page.dart';
+import 'dashboard/pages/service/notification_service.dart';
 import 'utility/storage_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inizializza il database dei fusi orari per device_calendar
+  // 1) Timezone per notifiche
   tz.initializeTimeZones();
-  // opzionale: puoi impostare una location specifica, ma tz.local di solito va bene
-  // tz.setLocalLocation(tz.getLocation('Europe/Rome'));
 
+  // 2) Inizializza il sistema notifiche
+  await NotificationService.init();
 
-  // Nasconde completamente barra superiore + barra di navigazione
+  // 3) Nascondi system bars
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   runApp(const EcoGrowApp());
@@ -65,7 +67,6 @@ class _RootPageState extends State<RootPage> {
 
     if (!mounted) return;
 
-    // Nessun token → utente non loggato
     if (token == null || token.isEmpty) {
       setState(() {
         _authenticated = false;
@@ -75,7 +76,6 @@ class _RootPageState extends State<RootPage> {
       return;
     }
 
-    // Token presente → utente autenticato
     final done = await StorageService.isQuestionnaireDone();
 
     setState(() {
@@ -90,18 +90,12 @@ class _RootPageState extends State<RootPage> {
     if (_loading) {
       return const SplashScreen();
     }
-
-    // Non loggato
     if (!_authenticated) {
       return const LoginPage();
     }
-
-    // Loggato ma non ha completato il questionario
     if (!_questionnaireDone) {
       return const TestPage();
     }
-
-    // Loggato e questionario completato
     return const DashboardPage();
   }
 }
