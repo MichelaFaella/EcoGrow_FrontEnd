@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../utility/app_colors.dart';
+import '../../../utility/app_colors.dart';
 
-class LogOutDialog extends StatelessWidget {
+class DeleteAccountDialog extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onCancel;
 
-  const LogOutDialog({
+  const DeleteAccountDialog({
     super.key,
     required this.onConfirm,
     required this.onCancel,
@@ -19,7 +19,7 @@ class LogOutDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       contentPadding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
       title: const Text(
-        "Are you sure that you want to log out?",
+        "Are you sure that you want to delete your account?",
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 18,
@@ -28,7 +28,7 @@ class LogOutDialog extends StatelessWidget {
         ),
       ),
       content: const Text(
-        "Next time you'll log in again and your plants will miss you!",
+        "This action will be permanent and you will lose your entire garden.",
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 14,
@@ -44,9 +44,12 @@ class LogOutDialog extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             minimumSize: const Size(100, 45),
           ),
-          onPressed: onConfirm,  // <-- NIENTE POP QUI
-          child: const Text("YES",
-              style: TextStyle(fontFamily: "Poppins", color: AppColors.white)),
+          // ✅ Nessun Navigator.pop() qui
+          onPressed: onConfirm,
+          child: const Text(
+            "YES",
+            style: TextStyle(fontFamily: "Poppins", color: AppColors.white),
+          ),
         ),
         const SizedBox(width: 10),
         ElevatedButton(
@@ -55,12 +58,14 @@ class LogOutDialog extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             minimumSize: const Size(100, 45),
           ),
-          onPressed: onCancel,   // <-- NIENTE POP QUI
-          child: const Text("NO",
-              style: TextStyle(fontFamily: "Poppins", color: AppColors.white)),
+          // ✅ Nessun Navigator.pop() qui
+          onPressed: onCancel,
+          child: const Text(
+            "NO",
+            style: TextStyle(fontFamily: "Poppins", color: AppColors.white),
+          ),
         ),
       ],
     );
   }
 }
-

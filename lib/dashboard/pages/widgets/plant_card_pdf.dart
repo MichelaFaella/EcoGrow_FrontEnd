@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import '../../utility/app_colors.dart';
-import '../pages/models/plant.dart';
+import '../../../utility/app_colors.dart';
+import '../models/plant.dart';
 
 class PlantCardPdf extends StatefulWidget {
   final Plant plant;

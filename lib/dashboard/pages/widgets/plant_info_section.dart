@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../utility/app_colors.dart';
+import '../../../utility/app_colors.dart';
+
 
 class PlantInfoSection extends StatelessWidget {
   final String title;
@@ -21,9 +22,9 @@ class PlantInfoSection extends StatelessWidget {
         ? "This plant belongs to the $family. $description"
         : description;
 
-    return Center(   // 👈 restringe la larghezza centrando il blocco
+    return Center(   //restringe la larghezza centrando il blocco
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 380), // 👈 larghezza perfetta
+        constraints: const BoxConstraints(maxWidth: 380), // larghezza perfetta
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

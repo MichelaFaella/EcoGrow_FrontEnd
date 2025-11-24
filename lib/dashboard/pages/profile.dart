@@ -1,10 +1,11 @@
 import 'dart:io' show Platform;
 
-import 'package:Ecogrow/dashboard/pages/add_friends.dart';
-import 'package:Ecogrow/dashboard/pages/generate_pdf.dart';
-import 'package:Ecogrow/dashboard/pages/personal_info.dart';
 import 'package:Ecogrow/dashboard/pages/service/user_service.dart';
-import 'package:Ecogrow/dashboard/widgets/logoutDialog.dart';
+import 'package:Ecogrow/dashboard/pages/subpages/add_friends.dart';
+import 'package:Ecogrow/dashboard/pages/subpages/generate_pdf.dart';
+import 'package:Ecogrow/dashboard/pages/subpages/personal_info.dart';
+import 'package:Ecogrow/dashboard/pages/widgets/deleteDialog.dart';
+import 'package:Ecogrow/dashboard/pages/widgets/logoutDialog.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -16,7 +17,6 @@ import '../../utility/app_colors.dart';
 import '../../utility/storage_service.dart';
 import '../../utility/toast.dart';
 import '../../utility/widget_utility.dart';
-import '../widgets/deleteDialog.dart';
 import 'models/user.dart';
 import 'service/reminder_service.dart';
 

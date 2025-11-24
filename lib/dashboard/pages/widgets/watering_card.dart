@@ -2,7 +2,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../utility/app_colors.dart';
+import '../../../utility/app_colors.dart';
+
 
 class WateringCard extends StatelessWidget {
   final String plantName;

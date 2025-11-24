@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../utility/app_colors.dart';
+import '../../../utility/app_colors.dart';
+
 
 class CustomBottomBar extends StatefulWidget {
   final int selectedIndex;

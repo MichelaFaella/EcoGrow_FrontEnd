@@ -1,8 +1,8 @@
+import 'package:Ecogrow/dashboard/pages/widgets/plant_filter.dart';
+import 'package:Ecogrow/dashboard/pages/widgets/plant_grid.dart';
 import 'package:Ecogrow/utility/app_colors.dart';
 import 'package:flutter/material.dart';
 
-import '../widgets/plant_filter.dart';
-import '../widgets/plant_grid.dart';
 
 class GardenPage extends StatefulWidget {
   const GardenPage({Key? key}) : super(key: key);

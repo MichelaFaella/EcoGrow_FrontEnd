@@ -1,10 +1,10 @@
 import 'dart:convert'; // 👈 aggiungi questo
 import 'dart:typed_data';
-import 'package:Ecogrow/dashboard/pages/info_plant.dart';
 import 'package:flutter/material.dart';
-import '../../utility/app_colors.dart';
-import '../pages/models/plant.dart';
-import '../pages/service/plant_service.dart';
+import '../../../utility/app_colors.dart';
+import '../models/plant.dart';
+import '../service/plant_service.dart';
+import '../subpages/info_plant.dart';
 
 class PlantCard extends StatelessWidget {
   final Plant plant;

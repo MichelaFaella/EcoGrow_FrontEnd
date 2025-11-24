@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../pages/models/plant.dart';
-import '../pages/service/plant_service.dart';
+import '../models/plant.dart';
+import '../service/plant_service.dart';
 import 'plant_card.dart';
 
 class PlantGrid extends StatefulWidget {

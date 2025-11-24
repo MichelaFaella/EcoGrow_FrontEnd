@@ -2,7 +2,7 @@ import 'package:Ecogrow/dashboard/pages/camera.dart';
 import 'package:Ecogrow/dashboard/pages/garden.dart';
 import 'package:Ecogrow/dashboard/pages/profile.dart';
 import 'package:Ecogrow/dashboard/pages/watering.dart';
-import 'package:Ecogrow/dashboard/widgets/custom_bottom_bar.dart';
+import 'package:Ecogrow/dashboard/pages/widgets/custom_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

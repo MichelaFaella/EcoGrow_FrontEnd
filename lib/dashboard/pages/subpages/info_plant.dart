@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import '../../utility/app_colors.dart';
+import '../../../utility/app_colors.dart';
 import '../widgets/additional_info.dart';
 import '../widgets/plant_info_section.dart';
 

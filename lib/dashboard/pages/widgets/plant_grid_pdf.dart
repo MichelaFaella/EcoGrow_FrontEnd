@@ -1,8 +1,10 @@
 import 'dart:typed_data';
-import 'package:Ecogrow/dashboard/widgets/plant_card_pdf.dart';
+import 'package:Ecogrow/dashboard/pages/widgets/plant_card_pdf.dart';
 import 'package:flutter/material.dart';
-import '../pages/models/plant.dart';
-import '../pages/service/plant_service.dart';
+
+import '../models/plant.dart';
+import '../service/plant_service.dart';
+
 
 class PlantGridPdf extends StatefulWidget {
   /// Callback verso GeneratePdfPage: lista ID selezionati + immagini (per id)

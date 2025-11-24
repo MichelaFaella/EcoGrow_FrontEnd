@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:Ecogrow/dashboard/pages/widgets/watering_card.dart';
 import 'package:flutter/material.dart';
 
 import '../../utility/app_colors.dart';
 import '../../utility/toast.dart';
-import '../widgets/watering_card.dart';
 import 'service/reminder_service.dart';
 
 class WateringPage extends StatefulWidget {
