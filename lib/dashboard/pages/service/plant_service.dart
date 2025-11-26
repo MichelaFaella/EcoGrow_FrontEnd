@@ -415,4 +415,176 @@ class PlantService {
       return (false, "Exception: $e");
     }
   }
+
+  Future<(bool ok, String? message, List<Map<String, dynamic>>? plants)>
+  getUserSickPlants() async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.", null);
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+      final uri = Uri.parse("$baseUrl/user/plants/sick");
+
+      print("[PlantService] GET /user/plants/sick");
+
+      final res = await http.get(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      print("[PlantService] Status: ${res.statusCode}");
+      print("[PlantService] Body: ${res.body}");
+
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+
+        if (decoded is! List) {
+          return (false, "Invalid response format.", null);
+        }
+
+        final List<Map<String, dynamic>> out = [];
+
+        for (final item in decoded) {
+          if (item is! Map<String, dynamic>) continue;
+
+          final plant = item["plant"] as Map<String, dynamic>? ?? {};
+
+          Uint8List? bytes;
+          final b64 = plant["photo_base64"] as String?;
+          if (b64 != null && b64.isNotEmpty) {
+            try {
+              bytes = base64Decode(b64);
+            } catch (_) {}
+          }
+
+          out.add({
+            "plant": plant,
+            "last_disease": item["last_disease"],
+            "image_bytes": bytes,
+          });
+        }
+
+        return (true, null, out);
+      }
+
+      try {
+        final err = jsonDecode(res.body);
+        return (false, err["error"]?.toString(), null);
+      } catch (_) {
+        return (false, "Error ${res.statusCode}", null);
+      }
+    } catch (e) {
+      return (false, "Exception: $e", null);
+    }
+  }
+
+  Future<(bool ok, String? message, List<Map<String, dynamic>>? plants)>
+  getUserHealthyPlants() async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.", null);
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+      final uri = Uri.parse("$baseUrl/user/plants/healthy");
+
+      final res = await http.get(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      if (res.statusCode != 200) {
+        try {
+          final err = jsonDecode(res.body);
+          return (false, err["error"]?.toString(), null);
+        } catch (_) {
+          return (false, "Error ${res.statusCode}", null);
+        }
+      }
+
+      final decoded = jsonDecode(res.body);
+      if (decoded is! List) {
+        return (false, "Invalid response format.", null);
+      }
+
+      final List<Map<String, dynamic>> out = [];
+
+      for (final item in decoded) {
+        if (item is! Map<String, dynamic>) continue;
+
+        Uint8List? bytes;
+        final b64 = item["photo_base64"] as String?;
+
+        if (b64 != null && b64.isNotEmpty) {
+          try {
+            bytes = base64Decode(b64);
+          } catch (_) {}
+        }
+
+        out.add({
+          ...item,
+          "image_bytes": bytes,
+        });
+      }
+
+      return (true, null, out);
+    } catch (e) {
+      return (false, "Exception: $e", null);
+    }
+  }
+
+  Future<(bool ok, String? message, List<String>? symptoms)>
+  getFamilySymptoms(String familyId) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.", null);
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+      final uri = Uri.parse("$baseUrl/disease/symptoms/$familyId");
+
+      final res = await http.get(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      if (res.statusCode != 200) {
+        try {
+          final err = jsonDecode(res.body);
+          return (false, err["error"]?.toString(), null);
+        } catch (_) {
+          return (false, "Error ${res.statusCode}", null);
+        }
+      }
+
+      final decoded = jsonDecode(res.body);
+      if (decoded is Map<String, dynamic>) {
+        final List<String> list = (decoded["symptoms"] as List)
+            .map((e) => e.toString())
+            .toList();
+        return (true, null, list);
+      }
+
+      return (false, "Invalid response format.", null);
+    } catch (e) {
+      return (false, "Exception: $e", null);
+    }
+  }
+
 }
