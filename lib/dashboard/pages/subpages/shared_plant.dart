@@ -73,33 +73,39 @@ class _SharedPlantPageState extends State<SharedPlantPage> {
   }
 
   // ============================================================
-  // CONDIVISIONE PIANTA
+  // CONDIVISIONE PIANTA (MULTI-FRIEND)
   // ============================================================
   Future<void> _sharePlant(String plantId) async {
-    // Apri il bottom sheet per selezionare l'amico
-    final shortId = await showModalBottomSheet<String>(
+    // ora ritorna List<String>
+    final List<String>? selectedFriends =
+    await showModalBottomSheet<List<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const SelectFriendForSharingSheet(),
     );
 
-    if (shortId == null || shortId.isEmpty) return;
+    if (selectedFriends == null || selectedFriends.isEmpty) return;
 
-    final (ok, msg) = await PlantService().sharePlant(
-      plantId: plantId,
-      shortId: shortId,
-    );
+    // Condivisione multipla → una richiesta per ogni shortId
+    for (final sid in selectedFriends) {
+      final (ok, msg) = await PlantService().sharePlant(
+        plantId: plantId,
+        shortId: sid,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (ok) {
-      showToastCorrect(context, "Plant shared!");
-      _loadData();
-    } else {
-      showToastWrong(context, msg ?? "Could not share plant");
+      if (!ok) {
+        showToastWrong(context, msg ?? "Could not share plant");
+        return;
+      }
     }
+
+    showToastCorrect(context, "Plant shared!");
+    _loadData();
   }
+
 
   // ============================================================
   // UI
@@ -115,8 +121,8 @@ class _SharedPlantPageState extends State<SharedPlantPage> {
             Align(
               alignment: Alignment.topLeft,
               child: IconButton(
-                iconSize: 40,     // <-- ingrandisce il bottone
-                padding: EdgeInsets.all(12),
+                iconSize: 40,
+                padding: const EdgeInsets.all(12),
                 icon: const Icon(
                   Icons.close,
                   color: AppColors.black,
@@ -129,7 +135,8 @@ class _SharedPlantPageState extends State<SharedPlantPage> {
             Expanded(
               child: loading
                   ? const Center(
-                child: CircularProgressIndicator(color: AppColors.green),
+                child:
+                CircularProgressIndicator(color: AppColors.green),
               )
                   : SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -153,27 +160,92 @@ class _SharedPlantPageState extends State<SharedPlantPage> {
                       const Text(
                         "No shared plants yet.",
                         style: TextStyle(
-                            fontSize: 14, color: AppColors.dark_gray),
+                          fontSize: 14,
+                          color: AppColors.dark_gray,
+                        ),
                       )
                     else
                       Column(
                         children: sharedPlants.map((p) {
-                          // --- immagine ---
                           Uint8List? bytes = p["image_bytes"];
                           ImageProvider<Object> img = bytes != null
                               ? MemoryImage(bytes)
                               : const AssetImage("images/plant1.jpg");
 
                           return Padding(
-                            padding:
-                            const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10),
                             child: FriendsCard(
                               title: p["name"] ?? "Unknown plant",
                               subtitle: p["nickname"] ?? "",
                               ownerName:
                               p["friend_full_name"] ?? "Unknown",
                               image: img,
-                              onTap: () => _removeShare(p["shared_id"]),
+                              onTap: () async {
+                                final bool? confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) {
+                                    return AlertDialog(
+                                      backgroundColor: AppColors.white,
+                                      elevation: 12,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      title: const Text(
+                                        "Remove sharing?",
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      content: const Text(
+                                        "This plant will no longer be shared with this friend.",
+                                        textAlign: TextAlign.justify,
+                                        style: TextStyle(
+                                          color: AppColors.black,
+                                          fontFamily: 'Poppins',
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      actionsPadding: const EdgeInsets.only(right: 15, bottom: 10),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text(
+                                            "Cancel",
+                                            style: TextStyle(
+                                              color: AppColors.black,
+                                              fontFamily: 'Poppins',
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          style: TextButton.styleFrom(
+                                            backgroundColor: AppColors.red,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                          ),
+                                          onPressed: () => Navigator.pop(context, true),
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontFamily: 'Poppins',
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+
+                                if (confirm == true) {
+                                  _removeShare(p["shared_id"]);
+                                }
+                              },
+
                             ),
                           );
                         }).toList(),
@@ -198,24 +270,25 @@ class _SharedPlantPageState extends State<SharedPlantPage> {
                       const Text(
                         "No private plants.",
                         style: TextStyle(
-                            fontSize: 14, color: AppColors.dark_gray),
+                          fontSize: 14,
+                          color: AppColors.dark_gray,
+                        ),
                       )
                     else
                       Column(
                         children: privatePlants.map((p) {
-                          // --- immagine ---
                           Uint8List? bytes = p["image_bytes"];
                           ImageProvider<Object> img = bytes != null
                               ? MemoryImage(bytes)
                               : const AssetImage("images/plant1.jpg");
 
                           return Padding(
-                            padding:
-                            const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10),
                             child: FriendsCard(
                               title: p["name"] ?? "Unknown",
                               subtitle: p["nickname"] ?? "",
-                              ownerName: "", // non mostra owner
+                              ownerName: "",
                               image: img,
                               onTap: () =>
                                   _sharePlant(p["plant_id"]),
@@ -226,7 +299,7 @@ class _SharedPlantPageState extends State<SharedPlantPage> {
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

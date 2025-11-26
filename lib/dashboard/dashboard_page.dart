@@ -1,4 +1,5 @@
 import 'package:Ecogrow/dashboard/pages/camera.dart';
+import 'package:Ecogrow/dashboard/pages/disease.dart';
 import 'package:Ecogrow/dashboard/pages/garden.dart';
 import 'package:Ecogrow/dashboard/pages/profile.dart';
 import 'package:Ecogrow/dashboard/pages/watering.dart';
@@ -83,7 +84,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   GardenPage(),
                   WateringPage(),
                   CameraPage(),
-                  _PageContent(title: 'Health Page'),
+                  DiseasePage(),
                   ProfilePage(),
                 ],
               ),

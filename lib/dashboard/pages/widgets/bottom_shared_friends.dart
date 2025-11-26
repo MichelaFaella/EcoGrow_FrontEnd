@@ -13,8 +13,9 @@ class SelectFriendForSharingSheet extends StatefulWidget {
 
 class _SelectFriendForSharingSheetState
     extends State<SelectFriendForSharingSheet> {
+
   List<Map<String, dynamic>> friends = [];
-  String? selectedShortId;
+  String? selectedKey;       // <-- ID UNICO per selezione
   bool loading = true;
 
   @override
@@ -35,17 +36,33 @@ class _SelectFriendForSharingSheetState
       return;
     }
 
-    setState(() {
-      friends = list.map((f) {
-        final fname = f["first_name"] ?? "";
-        final lname = f["last_name"] ?? "";
-        return {
-          "short_id": f["short_id"]?.toString() ?? "",
-          "name": "$fname $lname".trim(),
-          "avatar": "images/user.png",
-        };
-      }).toList();
+    final mapped = <Map<String, dynamic>>[];
 
+    for (final row in list) {
+      final f = Map<String, dynamic>.from(row);
+
+      final fname = (f["first_name"] ?? "").toString();
+      final lname = (f["last_name"] ?? "").toString();
+
+      final shortId = (f["short_id"] ?? "").toString().trim();
+      if (shortId.isEmpty) {
+        // Se short_id manca → l’amico non è selezionabile
+        continue;
+      }
+
+      // 🔥 LA CHIAVE UNICA È L'ID UTENTE (come FriendsCard)
+      final key = (f["id"] ?? f["user_id"] ?? f["friend_id"]).toString();
+
+      mapped.add({
+        "key": key,                 // usato per selezione
+        "short_id": shortId,        // usato per output
+        "name": "$fname $lname".trim(),
+        "avatar": "images/user.png",
+      });
+    }
+
+    setState(() {
+      friends = mapped;
       loading = false;
     });
   }
@@ -53,7 +70,7 @@ class _SelectFriendForSharingSheetState
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 520,
+      height: 500,
       decoration: const BoxDecoration(
         color: AppColors.black,
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
@@ -70,33 +87,19 @@ class _SelectFriendForSharingSheetState
               borderRadius: BorderRadius.circular(10),
             ),
           ),
+          const SizedBox(height: 35),
 
-          const SizedBox(height: 20),
-
-          const Text(
-            "Add a new friend...",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontFamily: 'Poppins',
-            ),
-          ),
-
-          const SizedBox(height: 25),
-
-          // MAIN LIST
+          // LISTA AMICI
           Expanded(
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 15),
+              margin: const EdgeInsets.all(30),
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: loading
                   ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.green,
-                ),
+                child: CircularProgressIndicator(color: AppColors.green),
               )
                   : friends.isEmpty
                   ? const Center(
@@ -105,7 +108,7 @@ class _SelectFriendForSharingSheetState
                   style: TextStyle(
                     color: AppColors.dark_gray,
                     fontSize: 16,
-                    fontFamily: 'Poppins',
+                    fontFamily: "Poppins",
                   ),
                 ),
               )
@@ -116,21 +119,28 @@ class _SelectFriendForSharingSheetState
                 const Divider(color: AppColors.light_gray),
                 itemBuilder: (_, i) {
                   final f = friends[i];
-                  final isSelected =
-                      selectedShortId == f["short_id"];
+
+                  final key = f["key"];
+                  final isSelected = key == selectedKey;
 
                   return GestureDetector(
                     onTap: () {
                       setState(() {
-                        selectedShortId = f["short_id"];
+                        if (selectedKey == key) {
+                          // 🔥 già selezionato → DESELEZIONA
+                          selectedKey = null;
+                        } else {
+                          // 🔥 nuova selezione
+                          selectedKey = key;
+                        }
                       });
+
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 18, vertical: 8),
                       child: Row(
                         children: [
-                          // Avatar
                           ClipOval(
                             child: Image.asset(
                               f["avatar"],
@@ -139,10 +149,7 @@ class _SelectFriendForSharingSheetState
                               fit: BoxFit.cover,
                             ),
                           ),
-
                           const SizedBox(width: 14),
-
-                          // Name
                           Expanded(
                             child: Text(
                               f["name"],
@@ -154,7 +161,7 @@ class _SelectFriendForSharingSheetState
                             ),
                           ),
 
-                          // Checkbox
+                          // CHECKBOX
                           Container(
                             width: 26,
                             height: 26,
@@ -171,8 +178,11 @@ class _SelectFriendForSharingSheetState
                                   : Colors.transparent,
                             ),
                             child: isSelected
-                                ? const Icon(Icons.check,
-                                size: 18, color: Colors.white)
+                                ? const Icon(
+                              Icons.check,
+                              size: 18,
+                              color: Colors.white,
+                            )
                                 : null,
                           ),
                         ],
@@ -187,19 +197,29 @@ class _SelectFriendForSharingSheetState
           const SizedBox(height: 15),
 
           // CONFIRM BUTTON
+          // CONFIRM BUTTON
           GestureDetector(
             onTap: () {
-              if (selectedShortId == null) {
+              if (selectedKey == null) {
                 showToastInfo(context, "Select a friend first");
                 return;
               }
-              Navigator.pop(context, selectedShortId);
+
+              final selected = friends.firstWhere((f) => f["key"] == selectedKey);
+
+              // 🔥 FIX: ritorna LIST<String>
+              Navigator.pop(context, <String>[ selected["short_id"].toString() ]);
+
             },
             child: Container(
               width: 200,
               height: 55,
               decoration: BoxDecoration(
-                color: AppColors.green,
+                gradient: const LinearGradient(
+                  colors: [AppColors.green, AppColors.orange],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: const Center(
@@ -216,7 +236,8 @@ class _SelectFriendForSharingSheetState
             ),
           ),
 
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 50),
         ],
       ),
     );

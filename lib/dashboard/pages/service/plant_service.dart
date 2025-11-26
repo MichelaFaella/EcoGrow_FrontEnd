@@ -322,21 +322,27 @@ class PlantService {
     return (true, null, out);
   }
 
-
-
   Future<(bool ok, String? message)> sharePlant({
     required String plantId,
     required String shortId,
   }) async {
     try {
+      // Recupera token
       final token = await StorageService.getToken();
       if (token == null || token.trim().isEmpty) {
         return (false, "User not authenticated.");
       }
 
       final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+
+      // Endpoint
       final uri = Uri.parse("$baseUrl/shared_plant/add");
 
+      print("[PlantService] → POST /shared_plant/add");
+      print("[PlantService]   plant_id: $plantId");
+      print("[PlantService]   short_id: $shortId");
+
+      // Richiesta
       final res = await http.post(
         uri,
         headers: {
@@ -347,21 +353,34 @@ class PlantService {
         },
         body: jsonEncode({
           "plant_id": plantId,
-          "short_id": shortId,
+          "short_id": shortId, // 👈 singolo short-id
         }),
       );
 
-      print("[PlantService] POST /shared_plant/add status: ${res.statusCode}");
-      print("[PlantService] body: ${res.body}");
+      print("[PlantService] ← Status: ${res.statusCode}");
+      print("[PlantService] ← Body: ${res.body}");
 
-      if (res.statusCode == 201) return (true, null);
+      // SUCCESSO (201)
+      if (res.statusCode == 201) {
+        return (true, null);
+      }
 
-      final decoded = jsonDecode(res.body);
-      return (false, decoded["error"]?.toString() ?? "Error ${res.statusCode}");
+      // ERRORE dal backend
+      try {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map<String, dynamic>) {
+          final msg = decoded["error"]?.toString();
+          return (false, msg ?? "Error ${res.statusCode}");
+        }
+      } catch (_) {}
+
+      return (false, "Error ${res.statusCode}");
     } catch (e) {
+      print("[PlantService] Exception: $e");
       return (false, "Exception: $e");
     }
   }
+
 
   Future<(bool ok, String? message)> unsharePlant(String sharedPlantId) async {
     try {
