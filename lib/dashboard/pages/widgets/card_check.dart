@@ -5,7 +5,8 @@ import '../../../utility/app_colors.dart';
 class CardCheck extends StatelessWidget {
   final String name;
   final Uint8List? imageBytes;
-  final VoidCallback onTap;
+  final VoidCallback onTap;       // CHECK button
+  final VoidCallback? onBadgeTap; // Bug tap
   final Color buttonColor;
   final bool isSick;
   final Widget? badge;
@@ -15,6 +16,7 @@ class CardCheck extends StatelessWidget {
     required this.name,
     required this.imageBytes,
     required this.onTap,
+    this.onBadgeTap,
     required this.buttonColor,
     this.isSick = false,
     this.badge,
@@ -36,16 +38,13 @@ class CardCheck extends StatelessWidget {
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // IMAGE + BADGE
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Stack(
               children: [
-                // image
                 AspectRatio(
                   aspectRatio: 1.0,
                   child: imageBytes == null
@@ -53,12 +52,15 @@ class CardCheck extends StatelessWidget {
                       : Image.memory(imageBytes!, fit: BoxFit.cover),
                 ),
 
-                // badge solo se isSick==true
+                // BUG BADGE
                 if (isSick && badge != null)
                   Positioned(
                     right: 12,
                     top: 12,
-                    child: badge!,
+                    child: GestureDetector(
+                      onTap: onBadgeTap,
+                      child: badge!,
+                    ),
                   ),
               ],
             ),
@@ -79,7 +81,7 @@ class CardCheck extends StatelessWidget {
             ),
           ),
 
-          // BUTTON
+          // BUTTON CHECK
           SizedBox(
             height: 41,
             child: Material(
@@ -105,13 +107,11 @@ class CardCheck extends StatelessWidget {
   }
 
   Widget _placeholder() {
-    return AspectRatio(
-      aspectRatio: 1.2,
-      child: Container(
-        color: Colors.grey[200],
-        child: const Icon(Icons.local_florist, size: 48, color: Colors.grey),
+    return Container(
+      color: Colors.grey[200],
+      child: const Center(
+        child: Icon(Icons.local_florist, size: 48, color: Colors.grey),
       ),
     );
   }
 }
-

@@ -1,4 +1,5 @@
 import 'package:Ecogrow/dashboard/pages/service/plant_service.dart';
+import 'package:Ecogrow/dashboard/pages/subpages/disease_ifo.dart';
 import 'package:Ecogrow/dashboard/pages/subpages/symptoms_camera.dart';
 import 'package:Ecogrow/dashboard/pages/widgets/card_check.dart';
 import 'package:Ecogrow/dashboard/pages/widgets/pop_up_symptoms.dart';
@@ -40,18 +41,14 @@ class _DiseasePageState extends State<DiseasePage> {
     final (ok2, msg2, healthyPlants) = await plantService.getUserHealthyPlants();
 
     if (!ok1) {
-      setState(() {
-        error = msg1;
-        loading = false;
-      });
+      setState(() => error = msg1);
+      loading = false;
       return;
     }
 
     if (!ok2) {
-      setState(() {
-        error = msg2;
-        loading = false;
-      });
+      setState(() => error = msg2);
+      loading = false;
       return;
     }
 
@@ -66,24 +63,23 @@ class _DiseasePageState extends State<DiseasePage> {
   // POPUP → CAMERA → DIAGNOSIS → REFRESH
   // ================================================================
   Future<void> _openSymptomsPopup(Map<String, dynamic> item) async {
-    final plant = (item["plant"] is Map) ? item["plant"] : item;
+    final plant = item["plant"] ?? item;
+    final plantId = plant["id"]?.toString();
 
-    final plantId = plant["id"]?.toString() ??
-        plant["plant_id"]?.toString() ??
-        item["plant_id"]?.toString();
-
-    if (plantId == null || plantId.isEmpty) {
+    if (plantId == null) {
       showToastWrong(context, "Plant ID not found.");
       return;
     }
 
     final familyId = plant["family_id"]?.toString();
-    if (familyId == null || familyId.isEmpty) {
+    if (familyId == null) {
       showToastWrong(context, "This plant has no family.");
       return;
     }
 
-    final (ok, msg, symptoms) = await plantService.getFamilySymptoms(familyId);
+    final (ok, msg, symptoms) =
+    await plantService.getFamilySymptoms(familyId);
+
     if (!ok || symptoms == null) {
       showToastWrong(context, msg ?? "Error loading symptoms");
       return;
@@ -110,8 +106,36 @@ class _DiseasePageState extends State<DiseasePage> {
 
     if (diagnosisResult != null) {
       await loadData();
-      if (mounted) setState(() {});
     }
+  }
+
+  // ================================================================
+  // BUG TAP → DISEASE INFO PAGE
+  // ================================================================
+  Future<void> _openDiseaseInfo(Map<String, dynamic> item) async {
+    final plant = item["plant"] ?? item;
+    final plantId = plant["id"]?.toString();
+
+    if (plantId == null) {
+      showToastWrong(context, "Plant ID not found.");
+      return;
+    }
+
+    final (ok, msg, data) = await plantService.getDiseaseLatest(plantId);
+
+    if (!ok || data == null) {
+      showToastWrong(context, msg ?? "Error loading disease info");
+      return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DiseaseInfoPage(data: data),
+      ),
+    );
   }
 
   // ================================================================
@@ -131,10 +155,9 @@ class _DiseasePageState extends State<DiseasePage> {
       ),
       child: const Icon(
         Symbols.bug_report,
-        fill: 1,        // 1 = pieno, 0 = outline
-        weight: 700,    // più alto = più bold
+        fill: 1,
+        weight: 700,
         grade: 200,
-        opticalSize: 48,
         color: Colors.orange,
         size: 30,
       ),
@@ -155,7 +178,6 @@ class _DiseasePageState extends State<DiseasePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 // ======================================================
                 // SICK PLANTS
                 // ======================================================
@@ -169,39 +191,40 @@ class _DiseasePageState extends State<DiseasePage> {
                 const SizedBox(height: 12),
 
                 if (sick.isEmpty)
-                  const Text(
-                    "No sick plants found.",
-                    style: TextStyle(fontSize: 14),
-                  ),
+                  const Text("No sick plants found."),
 
-                if (sick.isNotEmpty)
-                  GridView.builder(
-                    itemCount: sick.length,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.65,
-                    ),
-                    itemBuilder: (_, i) {
-                      final item = sick[i];
-                      final plant = item["plant"] ?? item;
-
-                      return CardCheck(
-                        name: plant["common_name"] ??
-                            plant["scientific_name"] ??
-                            "Unknown",
-                        imageBytes: item["image_bytes"],
-                        buttonColor: AppColors.orange,
-                        isSick: true,
-                        badge: sickBadge,
-                        onTap: () => _openSymptomsPopup(item),
-                      );
-                    },
+                GridView.builder(
+                  itemCount: sick.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.65,
                   ),
+                  itemBuilder: (_, i) {
+                    final item = sick[i];
+                    final plant = item["plant"] ?? item;
+
+                    return CardCheck(
+                      name: plant["common_name"] ??
+                          plant["scientific_name"] ??
+                          "Unknown",
+                      imageBytes: item["image_bytes"],
+                      buttonColor: AppColors.orange,
+                      isSick: true,
+                      badge: sickBadge,
+
+                      // BUTTON CHECK → AI camera
+                      onTap: () => _openSymptomsPopup(item),
+
+                      // BUG TAP → Disease Info Page
+                      onBadgeTap: () => _openDiseaseInfo(item),
+                    );
+                  },
+                ),
 
                 const SizedBox(height: 30),
 
@@ -216,9 +239,6 @@ class _DiseasePageState extends State<DiseasePage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                if (healthy.isEmpty)
-                  const Text("No healthy plants found."),
 
                 GridView.builder(
                   itemCount: healthy.length,
@@ -242,6 +262,8 @@ class _DiseasePageState extends State<DiseasePage> {
                       buttonColor: AppColors.green,
                       isSick: false,
                       badge: null,
+
+                      // Healthy plants → only symptoms popup
                       onTap: () => _openSymptomsPopup(item),
                     );
                   },

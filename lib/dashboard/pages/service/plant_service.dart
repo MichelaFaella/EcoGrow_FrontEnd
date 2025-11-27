@@ -669,6 +669,52 @@ class PlantService {
   }
 
 
+  Future<(bool ok, String? message, Map<String, dynamic>? data)>
+  getDiseaseLatest(String plantId) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.", null);
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+
+      final uri = Uri.parse("$baseUrl/ai/model/disease-latest")
+          .replace(queryParameters: {"plant_id": plantId});
+
+      print("[PlantService] GET /ai/model/disease-latest?plant_id=$plantId");
+
+      final res = await http.get(
+        uri,
+        headers: {
+          "Authorization": bearer,
+          "Accept": "application/json",
+          "Bypass-Tunnel-Reminder": "true",
+        },
+      );
+
+      print("[PlantService] Status: ${res.statusCode}");
+      print("[PlantService] Body: ${res.body}");
+
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map<String, dynamic>) {
+          return (true, null, decoded);
+        }
+        return (false, "Invalid response format.", null);
+      }
+
+      try {
+        final err = jsonDecode(res.body);
+        return (false, err["error"]?.toString(), null);
+      } catch (_) {
+        return (false, "Error ${res.statusCode}", null);
+      }
+    } catch (e) {
+      print("[PlantService] Exception GET disease-latest: $e");
+      return (false, "Exception: $e", null);
+    }
+  }
 
 
 
