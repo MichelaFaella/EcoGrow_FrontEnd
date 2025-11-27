@@ -95,13 +95,18 @@ class _GardenPageState extends State<GardenPage> {
 
               Expanded(
                 child: SingleChildScrollView(
-                  child: PlantGrid(
-                    key: ValueKey(selectedFilter),   // 👈 QUESTA È LA SOLUZIONE
-                    filter: selectedFilter,
+                  child: Column(
+                    children: [
+                      PlantGrid(
+                        key: ValueKey(selectedFilter),
+                        filter: selectedFilter,
+                      ),
+                      const SizedBox(height: 60,)
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 80),
+              const SizedBox(height: 30),
             ],
           ),
         ),

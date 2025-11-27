@@ -7,6 +7,8 @@ class CardCheck extends StatelessWidget {
   final Uint8List? imageBytes;
   final VoidCallback onTap;
   final Color buttonColor;
+  final bool isSick;
+  final Widget? badge;
 
   const CardCheck({
     super.key,
@@ -14,12 +16,13 @@ class CardCheck extends StatelessWidget {
     required this.imageBytes,
     required this.onTap,
     required this.buttonColor,
+    this.isSick = false,
+    this.badge,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 180,
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: AppColors.light_gray,
@@ -32,20 +35,32 @@ class CardCheck extends StatelessWidget {
           ),
         ],
       ),
-
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
 
-          // IMAGE
+          // IMAGE + BADGE
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: imageBytes == null
-                ? _placeholder()
-                : Image.memory(
-              imageBytes!,
-              height: 158,
-              fit: BoxFit.cover,
+            child: Stack(
+              children: [
+                // image
+                AspectRatio(
+                  aspectRatio: 1.0,
+                  child: imageBytes == null
+                      ? _placeholder()
+                      : Image.memory(imageBytes!, fit: BoxFit.cover),
+                ),
+
+                // badge solo se isSick==true
+                if (isSick && badge != null)
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: badge!,
+                  ),
+              ],
             ),
           ),
 
@@ -65,24 +80,20 @@ class CardCheck extends StatelessWidget {
           ),
 
           // BUTTON
-          Material(
-            color: buttonColor,
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(16),
-            ),
-            child: InkWell(
-              onTap: onTap,  // <- CORRETTO
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(16),
-              ),
-              child: Container(
-                height: 38,
-                alignment: Alignment.center,
-                child: const Text(
-                  "CHECK",
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.bold,
+          SizedBox(
+            height: 41,
+            child: Material(
+              color: buttonColor,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              child: InkWell(
+                onTap: onTap,
+                child: const Center(
+                  child: Text(
+                    "CHECK",
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -94,10 +105,13 @@ class CardCheck extends StatelessWidget {
   }
 
   Widget _placeholder() {
-    return Container(
-      height: 140,
-      color: Colors.grey[200],
-      child: const Icon(Icons.local_florist, size: 48, color: Colors.grey),
+    return AspectRatio(
+      aspectRatio: 1.2,
+      child: Container(
+        color: Colors.grey[200],
+        child: const Icon(Icons.local_florist, size: 48, color: Colors.grey),
+      ),
     );
   }
 }
+

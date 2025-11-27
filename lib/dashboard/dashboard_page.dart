@@ -116,24 +116,3 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-class _PageContent extends StatelessWidget {
-  final String title;
-  const _PageContent({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      alignment: Alignment.center,
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 26,
-          fontWeight: FontWeight.w600,
-          color: Colors.black,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-}

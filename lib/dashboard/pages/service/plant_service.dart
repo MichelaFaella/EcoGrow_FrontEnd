@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../utility/storage_service.dart';
 
@@ -586,5 +587,89 @@ class PlantService {
       return (false, "Exception: $e", null);
     }
   }
+
+  Future<(bool ok, String? message, Map<String, dynamic>? data)> diseaseDetection({
+    required File imageFile,
+    required String familyId,
+    required List<String> symptoms,
+    required String plantId,
+    double unknownThreshold = 0.5,
+  }) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        return (false, "User not authenticated.", null);
+      }
+
+      final bearer = token.startsWith("Bearer ") ? token : "Bearer $token";
+
+      // Endpoint CORRETTO
+      final uri = Uri.parse("$baseUrl/ai/model/disease-detection");
+
+      // Compress
+      final compressedBytes = await FlutterImageCompress.compressWithFile(
+        imageFile.path,
+        quality: 50,
+        minWidth: 1080,
+        minHeight: 1080,
+        format: CompressFormat.jpeg,
+      );
+
+      if (compressedBytes == null) {
+        return (false, "Image compression failed.", null);
+      }
+
+      // Multipart
+      final request = http.MultipartRequest("POST", uri);
+
+      request.headers.addAll({
+        "Authorization": bearer,
+        "Accept": "application/json",
+        "Bypass-Tunnel-Reminder": "true",
+      });
+
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          "image",
+          compressedBytes,
+          filename: "detection.jpg",
+        ),
+      );
+
+      request.fields["plant_id"] = plantId;
+      request.fields["family"] = familyId;
+      request.fields["unknown_threshold"] = unknownThreshold.toString();
+
+      // symptoms come JSON string
+      request.fields["disease_suggestions"] = jsonEncode(symptoms);
+
+      final streamed = await request.send();
+      final body = await streamed.stream.bytesToString();
+
+      print("[DiseaseDetection] ← ${streamed.statusCode}");
+      print("[DiseaseDetection] ← BODY: $body");
+
+      if (streamed.statusCode == 200) {
+        final decoded = jsonDecode(body);
+        if (decoded is Map<String, dynamic>) {
+          return (true, null, decoded);
+        }
+        return (false, "Invalid response format.", null);
+      }
+
+      try {
+        final err = jsonDecode(body);
+        return (false, err["error"]?.toString(), null);
+      } catch (_) {
+        return (false, "Error ${streamed.statusCode}", null);
+      }
+    } catch (e) {
+      return (false, "Exception: $e", null);
+    }
+  }
+
+
+
+
 
 }

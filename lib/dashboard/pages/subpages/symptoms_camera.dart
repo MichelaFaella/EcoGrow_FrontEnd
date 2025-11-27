@@ -1,14 +1,24 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../utility/app_colors.dart';
+import '../service/plant_service.dart';
+import 'disease_ifo.dart';
 
 class SymptomCameraPage extends StatefulWidget {
   final List<String> symptoms;
+  final String familyId;
+  final String plantId;   // 🔥 SOLO plantId (user_id viene letto dal JWT)
 
-  const SymptomCameraPage({super.key, required this.symptoms});
+  const SymptomCameraPage({
+    super.key,
+    required this.symptoms,
+    required this.familyId,
+    required this.plantId,
+  });
 
   @override
   State<SymptomCameraPage> createState() => _SymptomCameraPageState();
@@ -17,8 +27,10 @@ class SymptomCameraPage extends StatefulWidget {
 class _SymptomCameraPageState extends State<SymptomCameraPage> {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
-
   XFile? _capturedImage;
+  bool _isUploading = false;
+
+  final plantService = PlantService();
 
   @override
   void initState() {
@@ -26,6 +38,9 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
     _initCamera();
   }
 
+  // -----------------------------------------------------------
+  // INIT CAMERA
+  // -----------------------------------------------------------
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
@@ -42,20 +57,25 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
 
       if (mounted) setState(() {});
     } catch (e) {
-      debugPrint("[SymptomCameraPage] ERROR init camera: $e");
+      debugPrint("[SymptomCamera] ERROR init camera: $e");
     }
   }
 
+  // -----------------------------------------------------------
+  // TAKE PICTURE
+  // -----------------------------------------------------------
   Future<void> _takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-
     try {
+      if (_controller == null || !_controller!.value.isInitialized) return;
+
       await _initializeControllerFuture;
       final raw = await _controller!.takePicture();
 
       final dir = await getTemporaryDirectory();
-      final path = "${dir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg";
-      final saved = await File(raw.path).copy(path);
+      final jpgPath =
+          "${dir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg";
+
+      final saved = await File(raw.path).copy(jpgPath);
 
       setState(() => _capturedImage = XFile(saved.path));
 
@@ -63,19 +83,81 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
       _controller = null;
 
     } catch (e) {
-      debugPrint("[SymptomCameraPage] ERROR takePicture: $e");
+      debugPrint("[SymptomCamera] ERROR takePicture: $e");
     }
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
+  // -----------------------------------------------------------
+  // CONFIRM → SEND TO API
+  // -----------------------------------------------------------
+  Future<void> _confirmAndSend() async {
+    if (_capturedImage == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final original = File(_capturedImage!.path);
+
+      // ---- compress JPEG ----
+      final compressedBytes = await FlutterImageCompress.compressWithFile(
+        original.path,
+        quality: 40,
+        format: CompressFormat.jpeg,
+        minWidth: 1080,
+        minHeight: 1080,
+      );
+
+      if (compressedBytes == null) {
+        _showError("Compression failed");
+        return;
+      }
+
+      final cmpPath = original.path.replaceAll(".jpg", "_cmp.jpg");
+      final compressedFile = File(cmpPath);
+      await compressedFile.writeAsBytes(compressedBytes);
+
+      // =====================================================
+      // CALL API (only: plant_id + family_id + symptoms)
+      // user_id viene preso automaticamente dal JWT
+      // =====================================================
+      final (ok, msg, data) = await plantService.diseaseDetection(
+        imageFile: compressedFile,
+        familyId: widget.familyId,
+        symptoms: widget.symptoms,
+        plantId: widget.plantId,
+      );
+
+      if (!ok) {
+        _showError(msg ?? "Unknown error");
+        return;
+      }
+
+      // APRI DETTAGLI MALATTIA
+      final diagnosisResult = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DiseaseInfoPage(data: data ?? {}),
+        ),
+      );
+
+      // Ritorna alla DiseasePage
+      Navigator.pop(context, diagnosisResult);
+
+    } catch (e) {
+      _showError("Upload error: $e");
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
   }
 
-  // -----------------------------------------------------
-  // UI
-  // -----------------------------------------------------
+  // -----------------------------------------------------------
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
+  }
+
+  // -----------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,6 +168,7 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
     );
   }
 
+  // -----------------------------------------------------------
   Widget _buildCameraView() {
     return FutureBuilder(
       future: _initializeControllerFuture,
@@ -107,7 +190,6 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
                 ),
               ),
 
-              // ------------ MESSAGGIO ----------------
               SafeArea(
                 child: Align(
                   alignment: Alignment.topCenter,
@@ -122,7 +204,7 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
                         borderRadius: BorderRadius.circular(50),
                       ),
                       child: const Text(
-                        "Take a photo of the part of the plant where you noticed these changes",
+                        "Take a photo of the part showing symptoms",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.black,
@@ -135,7 +217,6 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
                 ),
               ),
 
-              // ------------ BOTTONE FOTO --------------
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
@@ -167,6 +248,7 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
     );
   }
 
+  // -----------------------------------------------------------
   Widget _buildPreviewView() {
     return Stack(
       children: [
@@ -174,51 +256,53 @@ class _SymptomCameraPageState extends State<SymptomCameraPage> {
           child: Image.file(File(_capturedImage!.path), fit: BoxFit.cover),
         ),
 
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 60),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // RETAKE
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.orange,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  onPressed: () async {
-                    setState(() => _capturedImage = null);
-                    await _initCamera();
-                  },
-                  child: const Text(
-                    "Retake",
-                    style: TextStyle(color: AppColors.white),
-                  ),
-                ),
+        if (_isUploading)
+          const Center(
+            child: CircularProgressIndicator(color: AppColors.green),
+          ),
 
-                // CONFIRM
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+        if (!_isUploading)
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 60),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () async {
+                      setState(() => _capturedImage = null);
+                      await _initCamera();
+                    },
+                    child: const Text(
+                      "Retake",
+                      style: TextStyle(color: AppColors.white),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context, _capturedImage);
-                  },
-                  child: const Text(
-                    "Confirm",
-                    style: TextStyle(color: Colors.white),
+
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: _confirmAndSend,
+                    child: const Text(
+                      "Confirm",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }

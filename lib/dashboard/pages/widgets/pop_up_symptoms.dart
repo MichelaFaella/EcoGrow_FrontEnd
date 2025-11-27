@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../utility/app_colors.dart';
-import '../subpages/symptoms_camera.dart';
 
 Future<List<String>?> showSymptomsPopup(
-    BuildContext context,
-    List<String> symptoms,
-    ) async {
+    BuildContext context, {
+      required List<String> symptoms,
+      required String familyId,
+    }) async {
   final List<String> selected = [];
 
   return showDialog<List<String>>(
@@ -42,9 +42,7 @@ Future<List<String>?> showSymptomsPopup(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // -----------------------------------------------------
-                // TITLE + CLOSE
-                // -----------------------------------------------------
+                // HEADER
                 Row(
                   children: [
                     GestureDetector(
@@ -67,9 +65,7 @@ Future<List<String>?> showSymptomsPopup(
 
                 const SizedBox(height: 20),
 
-                // -----------------------------------------------------
-                // SYMPTOMS LIST
-                // -----------------------------------------------------
+                // LISTA SINTOMI
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 350),
                   child: SingleChildScrollView(
@@ -90,10 +86,8 @@ Future<List<String>?> showSymptomsPopup(
                                   }
                                 });
                               },
-                              title: Text(
-                                sym,
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                              title: Text(sym,
+                                  style: const TextStyle(color: Colors.white)),
                               controlAffinity: ListTileControlAffinity.leading,
                               contentPadding: EdgeInsets.zero,
                             );
@@ -106,19 +100,10 @@ Future<List<String>?> showSymptomsPopup(
 
                 const SizedBox(height: 25),
 
-                // -----------------------------------------------------
-                // BUTTON CONFIRM → NAVIGA ALLA CAMERA
-                // -----------------------------------------------------
+                // CONFIRM BUTTON — ritorna i sintomi selezionati
                 GestureDetector(
                   onTap: () {
-                    Navigator.pop(context); // chiude il popup
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SymptomCameraPage(symptoms: selected),
-                      ),
-                    );
+                    Navigator.pop(context, selected);
                   },
                   child: Container(
                     height: 48,
@@ -141,7 +126,6 @@ Future<List<String>?> showSymptomsPopup(
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
