@@ -5,7 +5,7 @@ import '../../utility/storage_service.dart';
 
 class AuthService {
   // Localtunnel (ricordati di tenerlo attivo)
-  final String baseUrl = "https://ecogrow.loca.lt/api";
+  final String baseUrl = 'https://derivable-caron-nasological.ngrok-free.dev/api';
 
   String _normalizeBearer(String token) {
     final t = token.trim();

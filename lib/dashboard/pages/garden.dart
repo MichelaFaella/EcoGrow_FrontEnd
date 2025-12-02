@@ -3,7 +3,6 @@ import 'package:Ecogrow/dashboard/pages/widgets/plant_grid.dart';
 import 'package:Ecogrow/utility/app_colors.dart';
 import 'package:flutter/material.dart';
 
-
 class GardenPage extends StatefulWidget {
   const GardenPage({Key? key}) : super(key: key);
 
@@ -13,10 +12,17 @@ class GardenPage extends StatefulWidget {
 
 class _GardenPageState extends State<GardenPage> {
   String selectedFilter = 'ALL';
+  String searchQuery = '';
 
   void _onFilterChanged(String newFilter) {
     setState(() {
       selectedFilter = newFilter;
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      searchQuery = value.toLowerCase();
     });
   }
 
@@ -30,7 +36,7 @@ class _GardenPageState extends State<GardenPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
+              // SEARCH BAR
               Center(
                 child: Container(
                   width: 300,
@@ -46,30 +52,33 @@ class _GardenPageState extends State<GardenPage> {
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      SizedBox(width: 12),
-                      Icon(Icons.search,color: AppColors.dark_gray,),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.search, color: AppColors.dark_gray),
 
-                      Expanded(child: TextField(
-                        cursorWidth: 0,
-                        showCursor: false,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Search your plants...',
-                          hintStyle: TextStyle(
-                            color: AppColors.dark_gray,
+                      Expanded(
+                        child: TextField(
+                          onChanged: _onSearchChanged,
+                          style: const TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 14,
+                            fontSize: 16,
                           ),
-                          border: InputBorder.none,
-                          contentPadding:
-                          EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                          decoration: const InputDecoration(
+                            hintText: 'Search your plants...',
+                            hintStyle: TextStyle(
+                              color: AppColors.dark_gray,
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 10,
+                            ),
+                          ),
                         ),
-                      ),),
+                      ),
                     ],
                   ),
                 ),
@@ -77,6 +86,7 @@ class _GardenPageState extends State<GardenPage> {
 
               const SizedBox(height: 30),
 
+              // TITLE
               const Text(
                 "Your plants",
                 textAlign: TextAlign.left,
@@ -89,23 +99,27 @@ class _GardenPageState extends State<GardenPage> {
 
               const SizedBox(height: 20),
 
+              // FILTER BAR
               PlantFilterBar(onFilterSelected: _onFilterChanged),
 
               const SizedBox(height: 20),
 
+              // PLANTS GRID
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
                       PlantGrid(
-                        key: ValueKey(selectedFilter),
+                        key: ValueKey('$selectedFilter-$searchQuery'),
                         filter: selectedFilter,
+                        searchQuery: searchQuery,
                       ),
-                      const SizedBox(height: 60,)
+                      const SizedBox(height: 60),
                     ],
                   ),
                 ),
               ),
+
               const SizedBox(height: 30),
             ],
           ),

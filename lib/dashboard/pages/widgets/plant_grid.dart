@@ -5,7 +5,13 @@ import 'plant_card.dart';
 
 class PlantGrid extends StatefulWidget {
   final String filter;
-  const PlantGrid({Key? key, required this.filter}) : super(key: key);
+  final String searchQuery;
+
+  const PlantGrid({
+    Key? key,
+    required this.filter,
+    required this.searchQuery,
+  }) : super(key: key);
 
   @override
   State<PlantGrid> createState() => _PlantGridState();
@@ -43,10 +49,28 @@ class _PlantGridState extends State<PlantGrid> {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // 🔍 APPLY FILTER + SEARCH
+  // ---------------------------------------------------------------------------
   List<Plant> _applyFilter() {
     List<Plant> filtered = [...plants];
 
-    // ORDER BY SIZE (logico, non alfabetico)
+    // -----------------------------------------------------------------------
+    // 🔍 1. SEARCH su commonName & scientificName
+    // -----------------------------------------------------------------------
+    if (widget.searchQuery.isNotEmpty) {
+      final q = widget.searchQuery.toLowerCase();
+
+      filtered = filtered.where((p) {
+        final commonMatch = p.commonName.toLowerCase().contains(q);
+        final scientificMatch = p.name.toLowerCase().contains(q);
+        return commonMatch || scientificMatch;
+      }).toList();
+    }
+
+    // -----------------------------------------------------------------------
+    // 🔽 2. ORDER BY SIZE
+    // -----------------------------------------------------------------------
     if (widget.filter == 'SIZE') {
       const sizeOrder = {
         "small": 0,
@@ -60,11 +84,20 @@ class _PlantGridState extends State<PlantGrid> {
       });
     }
 
-    // ORDER BY DIFFICULTY
+    // -----------------------------------------------------------------------
+    // 🔽 3. ORDER BY DIFFICULTY
+    // -----------------------------------------------------------------------
     else if (widget.filter == 'DIFFICULTY') {
       filtered.sort((a, b) {
         return int.parse(a.difficulty).compareTo(int.parse(b.difficulty));
       });
+    }
+
+    // -----------------------------------------------------------------------
+    // ⭐ 4. ALL → NESSUN ORDINAMENTO (ordine naturale)
+    // -----------------------------------------------------------------------
+    else if (widget.filter == 'ALL') {
+      filtered.shuffle();
     }
 
     return filtered;

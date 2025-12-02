@@ -65,7 +65,7 @@ class LoginPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 30),
                       const Text(
-                        'Hi there!\nAre you ready to create your digital garden?\nHere you can take care of your plant in an easy, smart\nand eco-friendly way.',
+                        'Hi there!\nAre you ready to create your digital garden?\nHere you can take care of your plant in an easy, smart and eco-friendly way.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.white,

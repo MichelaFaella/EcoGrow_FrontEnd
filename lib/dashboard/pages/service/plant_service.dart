@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../utility/storage_service.dart';
 
 class PlantService {
-  final String baseUrl = 'https://ecogrow.loca.lt/api';
+  final String baseUrl = 'https://derivable-caron-nasological.ngrok-free.dev/api';
 
   /// Ritorna:
   /// - ok: true/false

@@ -5,7 +5,7 @@ import '../../../utility/storage_service.dart';
 import '../models/user.dart';
 
 class UserService {
-  final String baseUrl = 'https://ecogrow.loca.lt/api';
+  final String baseUrl = 'https://derivable-caron-nasological.ngrok-free.dev/api';
 
   // ======================
   // Helpers

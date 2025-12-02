@@ -268,6 +268,7 @@ class _DiseasePageState extends State<DiseasePage> {
                     );
                   },
                 ),
+                const SizedBox(height: 120,)
               ],
             ),
           ),
