@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../utility/app_colors.dart';
 import '../widgets/additional_info.dart';
 import '../widgets/plant_info_section.dart';
+import '../widgets/tips_info.dart';
 
 class InfoPlantPage extends StatelessWidget {
   final Map<String, dynamic> plant;
@@ -19,6 +20,13 @@ class InfoPlantPage extends StatelessWidget {
     final title = (plant["common_name"] != null && plant["common_name"].trim().isNotEmpty)
         ? plant["common_name"]
         : plant["scientific_name"];
+
+    // ---------- TIPS PROCESSING ----------
+    List<dynamic>? tipsList;
+    if (plant["tips"] != null) {
+      final t = plant["tips"];
+      tipsList = t is List ? t : [t];
+    }
 
     // ---------- IMAGE HANDLING ----------
     Uint8List? imageBytes;
@@ -128,6 +136,9 @@ class InfoPlantPage extends StatelessWidget {
                       family: plant["family_name"],
                     ),
 
+                  if (tipsList != null)
+                    PlantTipsSection(tips: tipsList),
+
                   if (plant["climate"] != null)
                     PlantInfoSection(title: "Climate", description: plant["climate"]),
 
@@ -139,6 +150,7 @@ class InfoPlantPage extends StatelessWidget {
 
                   if (plant["use"] != null)
                     PlantInfoSection(title: "Use", description: plant["use"]),
+
 
                   const SizedBox(height: 20),
 

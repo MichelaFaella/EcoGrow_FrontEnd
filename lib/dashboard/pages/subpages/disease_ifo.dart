@@ -126,7 +126,7 @@ class DiseaseInfoPage extends StatelessWidget {
                           color: Colors.white,
                         ),
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                        maxLines: 2,
                       ),
                     ),
                     const SizedBox(width: 48),
