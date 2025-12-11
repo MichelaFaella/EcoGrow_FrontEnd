@@ -64,6 +64,9 @@ class _RootPageState extends State<RootPage> {
   final ReminderService _reminderService = ReminderService();
 
   String? _lastReminderKey;
+  DateTime? _lastReminderAt;
+
+  static const Duration _reminderCooldown = Duration(seconds: 30);
 
   @override
   void initState() {
@@ -74,7 +77,7 @@ class _RootPageState extends State<RootPage> {
 
 
   void _startReminderTimer() {
-    _reminderTimer = Timer.periodic(const Duration(seconds: 600), (_) async {
+    _reminderTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       if (!_authenticated || !_questionnaireDone) return;
       if (!mounted) return;
 
@@ -88,13 +91,32 @@ class _RootPageState extends State<RootPage> {
 
       final plants = duePlants ?? <String>[];
       final newKey = '$due|${plants.join(",")}';
+      final now = DateTime.now();
 
-      if (newKey == _lastReminderKey) {
+      // Se non ci sono piante "due", resettiamo stato e usciamo
+      if (!due) {
+        _lastReminderKey = null;
+        _lastReminderAt = null;
         return;
       }
-      _lastReminderKey = newKey;
 
-      if (due && message != null) {
+      // Se il promemoria è lo stesso di prima...
+      final sameReminder = newKey == _lastReminderKey;
+
+      // ...e siamo ancora nel periodo di cooldown, non notifichiamo
+      final bool stillInCooldown = _lastReminderAt != null &&
+          now.difference(_lastReminderAt!) < _reminderCooldown;
+
+      if (sameReminder && stillInCooldown) {
+        // stesso promemoria e troppo presto per ripeterlo
+        return;
+      }
+
+      // Aggiorniamo stato dell'ultimo reminder
+      _lastReminderKey = newKey;
+      _lastReminderAt = now;
+
+      if (message != null) {
         print('[Reminder] MESSAGE: $message');
         print('[Reminder] DUE PLANTS: $plants');
 
