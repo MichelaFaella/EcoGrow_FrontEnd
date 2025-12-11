@@ -194,6 +194,66 @@ class ReminderService {
     }
   }
 
+  Future<(bool ok, String? message, bool due, List<String>?)>
+  fetchDuePlantsReminder() async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null || token.isEmpty) {
+        return (false, 'Not authenticated', false, null);
+      }
+
+      final uri = Uri.parse('$baseUrl/reminders/check-plants');
+
+      // ⬇⬇⬇ CAMBIATO: da http.get(...) a http.post(...)
+      final res = await http.post(
+        uri,
+        headers: {
+          'Authorization': _normalizeBearer(token),
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        // nessun body richiesto: l'utente è ricavato dal JWT sul backend
+      );
+
+      print("→ /reminders/check-plants STATUS: ${res.statusCode}");
+      print("→ /reminders/check-plants RAW:");
+      print(res.body);
+
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+
+        if (body is Map<String, dynamic>) {
+          final bool due = body['due'] == true;
+
+          final String? msg =
+          body['message'] is String ? body['message'] as String : null;
+
+          List<String>? duePlants;
+          final dp = body['due_plants'];
+          if (dp is List) {
+            duePlants = dp.whereType<String>().toList();
+          }
+
+          return (true, msg, due, duePlants);
+        } else {
+          return (false, 'Invalid response format from server', false, null);
+        }
+      }
+
+      // provo a estrarre un eventuale messaggio di errore dal body
+      try {
+        final body = jsonDecode(res.body);
+        if (body is Map && body['error'] is String) {
+          return (false, body['error'] as String, false, null);
+        }
+      } catch (_) {}
+
+      return (false, 'Server error: ${res.statusCode}', false, null);
+    } catch (e) {
+      return (false, 'Network error: $e', false, null);
+    }
+  }
+
 
   Future<(bool ok, String? message, Map<String, dynamic>?)> doWatering({
     required String plantId,

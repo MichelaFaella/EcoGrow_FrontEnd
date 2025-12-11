@@ -31,9 +31,12 @@ class WateringCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final amountText = amountMl != null ? "~ $amountMl ml" : "Amount not set";
 
-    final cardColor = wasWatered ? AppColors.water : AppColors.light_gray;
-    final textColor = wasWatered ? AppColors.white : AppColors.dark_green;
-    final titleColor = wasWatered ? AppColors.white : AppColors.black;
+    final bool shouldHighlight = isToday && wasWatered;
+
+    final cardColor = shouldHighlight ? AppColors.water : AppColors.light_gray;
+    final textColor = shouldHighlight ? AppColors.white : AppColors.dark_green;
+    final titleColor = shouldHighlight ? AppColors.white : AppColors.black;
+
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
