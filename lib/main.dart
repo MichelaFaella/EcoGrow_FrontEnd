@@ -2,16 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'authentication/login_page.dart';
+import 'authentication/service/notification_service.dart';
 import 'authentication/splash_screen.dart';
 import 'authentication/test.dart';
 import 'dashboard/dashboard_page.dart';
 import 'dashboard/pages/service/reminder_service.dart';
 import 'utility/storage_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inizializza il database dei fusi orari per device_calendar
@@ -19,6 +21,7 @@ void main() {
   // opzionale: puoi impostare una location specifica, ma tz.local di solito va bene
   // tz.setLocalLocation(tz.getLocation('Europe/Rome'));
 
+  await NotificationService().init();
 
   // Nasconde completamente barra superiore + barra di navigazione
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -69,9 +72,9 @@ class _RootPageState extends State<RootPage> {
     _startReminderTimer();
   }
 
+
   void _startReminderTimer() {
-    _reminderTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
-      // Se non è autenticato o non ha finito il questionario, non chiamiamo nulla
+    _reminderTimer = Timer.periodic(const Duration(seconds: 600), (_) async {
       if (!_authenticated || !_questionnaireDone) return;
       if (!mounted) return;
 
@@ -83,12 +86,10 @@ class _RootPageState extends State<RootPage> {
         return;
       }
 
-      // Costruiamo una “firma” del promemoria per non ripetere sempre lo stesso messaggio
       final plants = duePlants ?? <String>[];
       final newKey = '$due|${plants.join(",")}';
 
       if (newKey == _lastReminderKey) {
-        // Niente di nuovo da mostrare
         return;
       }
       _lastReminderKey = newKey;
@@ -100,18 +101,36 @@ class _RootPageState extends State<RootPage> {
         final plantsText = plants.join(', ');
         final text = plantsText.isEmpty ? message : '$message\n$plantsText';
 
-        // Mostra uno Snackbar in stile Android
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(text),
-            duration: const Duration(seconds: 4),
-          ),
+        await NotificationService().showReminderNotification(
+          title: 'EcoGrow - Plant reminder',
+          body: text,
         );
       }
     });
   }
 
-  @override
+  Future<void> _askNotificationPermissionIfNeeded() async {
+    final status = await Permission.notification.status;
+
+    // Se è già stato concesso o limitato, non facciamo nulla
+    if (status.isGranted || status.isLimited) {
+      print('[Notifications] Permission already granted: $status');
+      return;
+    }
+
+    // Se è permanentemente negato, possiamo portare l’utente alle impostazioni
+    if (status.isPermanentlyDenied) {
+      print('[Notifications] Permission permanently denied, opening settings');
+      await openAppSettings();
+      return;
+    }
+
+    // Altrimenti chiediamo il permesso
+    final newStatus = await Permission.notification.request();
+    print('[Notifications] New notification permission status: $newStatus');
+  }
+
+
   @override
   void dispose() {
     _reminderTimer?.cancel();
@@ -141,6 +160,8 @@ class _RootPageState extends State<RootPage> {
       _questionnaireDone = done;
       _loading = false;
     });
+
+    await _askNotificationPermissionIfNeeded();
   }
 
   @override
