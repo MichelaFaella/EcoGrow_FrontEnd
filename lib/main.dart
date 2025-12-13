@@ -66,7 +66,7 @@ class _RootPageState extends State<RootPage> {
   String? _lastReminderKey;
   DateTime? _lastReminderAt;
 
-  static const Duration _reminderCooldown = Duration(seconds: 30);
+  static const Duration _reminderCooldown = Duration(seconds: 20);
 
   @override
   void initState() {
@@ -152,6 +152,23 @@ class _RootPageState extends State<RootPage> {
     print('[Notifications] New notification permission status: $newStatus');
   }
 
+  void _syncReminderTimer() {
+    final shouldRun = _authenticated && _questionnaireDone;
+
+    if (!shouldRun) {
+      _reminderTimer?.cancel();
+      _reminderTimer = null;
+      _lastReminderKey = null;
+      _lastReminderAt = null;
+      return;
+    }
+
+    // se già attivo, non crearne un altro
+    if (_reminderTimer != null) return;
+
+    _startReminderTimer();
+  }
+
 
   @override
   void dispose() {
@@ -184,6 +201,7 @@ class _RootPageState extends State<RootPage> {
     });
 
     await _askNotificationPermissionIfNeeded();
+    _syncReminderTimer();
   }
 
   @override

@@ -5,10 +5,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 
 class PdfPlantExporter {
-
   static Future<Uint8List> generatePlantPdf(
       List<Map<String, dynamic>> plants) async {
-
     final pdf = pw.Document();
 
     final logo = await _loadEcoGrowLogo();
@@ -36,10 +34,7 @@ class PdfPlantExporter {
                       height: 300,
                       child: pw.Image(logo),
                     ),
-
                   pw.SizedBox(height: 40),
-
-
                 ],
               ),
             ),
@@ -55,15 +50,14 @@ class PdfPlantExporter {
       pw.MultiPage(
         margin: const pw.EdgeInsets.all(20),
         pageFormat: PdfPageFormat.a4,
-
         build: (ctx) {
           return plants.map((plant) {
             final Uint8List? img = _extractImage(plant);
+            final List<String> tips = _extractTips(plant);
 
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-
                 // NOME PIANTA
                 pw.Text(
                   plant["common_name"] ?? plant["scientific_name"],
@@ -104,17 +98,18 @@ class PdfPlantExporter {
                         "${plant["family_description"] ?? ""}",
                   ),
 
+                // TIPS (COME NELLA UI)
+                if (tips.isNotEmpty) _tipsSectionPdf(tips),
+
                 if (plant["climate"] != null)
                   _section("Climate", plant["climate"]),
 
                 if (plant["category"] != null)
                   _section("Category", plant["category"]),
 
-                if (plant["origin"] != null)
-                  _section("Origin", plant["origin"]),
+                if (plant["origin"] != null) _section("Origin", plant["origin"]),
 
-                if (plant["use"] != null)
-                  _section("Use", plant["use"]),
+                if (plant["use"] != null) _section("Use", plant["use"]),
 
                 pw.SizedBox(height: 20),
 
@@ -172,11 +167,136 @@ class PdfPlantExporter {
   static Uint8List? _extractImage(Map<String, dynamic> plant) {
     try {
       if (plant["imageBytes"] is Uint8List) return plant["imageBytes"];
-      if (plant["photo_base64"] != null) return base64Decode(plant["photo_base64"]);
+      if (plant["photo_base64"] != null) {
+        return base64Decode(plant["photo_base64"]);
+      }
       return null;
     } catch (_) {
       return null;
     }
+  }
+
+  // =====================================================================
+  // TIPS
+  // =====================================================================
+  static List<String> _extractTips(Map<String, dynamic> plant) {
+    if (plant["tips"] == null) return [];
+
+    dynamic t = plant["tips"];
+
+    // Caso: stringa JSON oppure stringa semplice
+    if (t is String) {
+      final s = t.trim();
+      if (s.isEmpty) return [];
+      try {
+        t = jsonDecode(s);
+      } catch (_) {
+        return [s];
+      }
+    }
+
+    // Caso: oggetto con chiave tips
+    if (t is Map && t["tips"] != null) {
+      t = t["tips"];
+    }
+
+    // Caso: lista
+    if (t is List) {
+      final out = <String>[];
+      for (final e in t) {
+        if (e == null) continue;
+
+        if (e is String) {
+          final v = e.trim();
+          if (v.isNotEmpty) out.add(v);
+          continue;
+        }
+
+        if (e is Map) {
+          final candidates = [
+            e["tip"],
+            e["text"],
+            e["description"],
+            e["title"],
+            e["value"],
+          ];
+
+          final first = candidates.firstWhere(
+                (x) => x is String && (x as String).trim().isNotEmpty,
+            orElse: () => null,
+          );
+
+          if (first is String) out.add(first.trim());
+        } else {
+          final v = e.toString().trim();
+          if (v.isNotEmpty) out.add(v);
+        }
+      }
+      return out;
+    }
+
+    // Fallback
+    final v = t.toString().trim();
+    return v.isEmpty ? [] : [v];
+  }
+
+  static pw.Widget _tipsSectionPdf(List<String> tips) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 12),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            "Tips",
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex("#F3F8EF"),
+              borderRadius: pw.BorderRadius.circular(12),
+              border:
+              pw.Border.all(color: PdfColor.fromHex("#55AA33"), width: 1),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: tips.map((t) => _tipBulletRowPdf(t)).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _tipBulletRowPdf(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 8,
+            height: 8,
+            margin: const pw.EdgeInsets.only(top: 4, right: 10),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex("#55AA33"),
+              shape: pw.BoxShape.circle,
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              text,
+              style: const pw.TextStyle(fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // =====================================================================
@@ -189,7 +309,8 @@ class PdfPlantExporter {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(title,
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              style:
+              pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 4),
           pw.Text(description, style: const pw.TextStyle(fontSize: 12)),
         ],
@@ -204,7 +325,8 @@ class PdfPlantExporter {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(key.toUpperCase(),
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+              style:
+              pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 3),
           pw.Text(
             value,
@@ -229,7 +351,8 @@ class PdfPlantExporter {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(label.toUpperCase(),
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+              style:
+              pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 8),
           pw.Row(
             children: List.generate(max, (i) {
@@ -241,9 +364,8 @@ class PdfPlantExporter {
                 decoration: pw.BoxDecoration(
                   shape: pw.BoxShape.circle,
                   border: pw.Border.all(color: PdfColor.fromHex("#333333")),
-                  color: active
-                      ? PdfColor.fromHex("#55AA33")
-                      : PdfColors.white,
+                  color:
+                  active ? PdfColor.fromHex("#55AA33") : PdfColors.white,
                 ),
                 alignment: pw.Alignment.center,
                 child: pw.Text(
@@ -268,10 +390,8 @@ class PdfPlantExporter {
     const int globalMin = 0;
     const int globalMax = 100;
 
-    final minPos =
-        ((min - globalMin) / (globalMax - globalMin)) * totalWidth;
-    final maxPos =
-        ((max - globalMin) / (globalMax - globalMin)) * totalWidth;
+    final minPos = ((min - globalMin) / (globalMax - globalMin)) * totalWidth;
+    final maxPos = ((max - globalMin) / (globalMax - globalMin)) * totalWidth;
 
     return pw.Padding(
       padding: const pw.EdgeInsets.only(bottom: 20),
@@ -286,9 +406,7 @@ class PdfPlantExporter {
               color: PdfColor.fromHex("#222222"),
             ),
           ),
-
           pw.SizedBox(height: 10),
-
           pw.Container(
             height: 22,
             child: pw.Stack(
@@ -301,17 +419,16 @@ class PdfPlantExporter {
                     color: PdfColors.black,
                   ),
                 ),
-
                 pw.Positioned(
                   left: minPos - 1,
-                  child: pw.Container(width: 2, height: 20, color: PdfColors.black),
+                  child:
+                  pw.Container(width: 2, height: 20, color: PdfColors.black),
                 ),
-
                 pw.Positioned(
                   left: maxPos - 1,
-                  child: pw.Container(width: 2, height: 20, color: PdfColors.black),
+                  child:
+                  pw.Container(width: 2, height: 20, color: PdfColors.black),
                 ),
-
                 pw.Positioned(
                   top: 10,
                   left: minPos,
@@ -324,28 +441,32 @@ class PdfPlantExporter {
               ],
             ),
           ),
-
           pw.SizedBox(height: 8),
-
           pw.Container(
             height: 16,
             child: pw.Stack(
               children: [
                 pw.Positioned(
                   left: minPos - 10,
-                  child: pw.Text("$min",
-                      style: pw.TextStyle(
-                          fontSize: 13,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromHex("#222222"))),
+                  child: pw.Text(
+                    "$min",
+                    style: pw.TextStyle(
+                      fontSize: 13,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColor.fromHex("#222222"),
+                    ),
+                  ),
                 ),
                 pw.Positioned(
                   left: maxPos - 10,
-                  child: pw.Text("$max",
-                      style: pw.TextStyle(
-                          fontSize: 13,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromHex("#222222"))),
+                  child: pw.Text(
+                    "$max",
+                    style: pw.TextStyle(
+                      fontSize: 13,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColor.fromHex("#222222"),
+                    ),
+                  ),
                 ),
               ],
             ),
